@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Escala Semanal</h2>
+
+<div class="table-responsive mt-4">
+    <table class="table table-bordered table-striped">
+        <thead class="table-dark">
+            <tr>
+                <th>Dia</th>
+                <th>Horário</th>
+                <th>Funcionário</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% set dias = ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado', 'Domingo'] %}
+            {% for item in escala %}
+            <tr>
+                <td>{{ dias[item.dia_semana] }}</td>
+                <td>{{ item.horario }}</td>
+                <td>{{ item.funcionario.nome }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<a href="{{ url_for('dashboard') }}" class="btn btn-secondary">Voltar</a>
+{% endblock %}

@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Dashboard</h2>
+
+<div class="row mt-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5>Funcionários Cadastrados</h5>
+            </div>
+            <div class="card-body">
+                <h3>{{ funcionarios|length }}</h3>
+                <a href="{{ url_for('listar_funcionarios') }}" class="btn btn-primary">Gerenciar</a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5>Gerar Nova Escala</h5>
+            </div>
+            <div class="card-body">
+                <p>Cria automaticamente a escala semanal 6x1</p>
+                <a href="{{ url_for('gerar_escala') }}" class="btn btn-success">Gerar Escala</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if escala %}
+<div class="mt-4">
+    <h3>Escala Atual</h3>
+    <a href="{{ url_for('ver_escala') }}" class="btn btn-info">Ver Escala Completa</a>
+</div>
+{% endif %}
+{% endblock %}
