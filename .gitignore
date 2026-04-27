@@ -1,0 +1,19 @@
+# Ambiente virtual
+venv/
+env/
+__pycache__/
+*.pyc
+
+# BANCO DE DADOS - NUNCA ENVIAR
+*.db
+*.sqlite
+*.sqlite3
+/data/
+
+# VSCode
+.vscode/
+
+# Sistema
+.DS_Store
+Thumbs.db
+.env
