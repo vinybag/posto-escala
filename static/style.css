@@ -39,12 +39,42 @@ body {
     padding: 8px;
 }
 
+/* Linha de datas */
+.datas-header th {
+    background-color: #495057;
+    color: #ffc107;
+    font-size: 0.8rem;
+    padding: 5px;
+    font-weight: bold;
+}
+
+/* Cabeçalho do turno */
+.turno-header td {
+    background-color: #e9ecef;
+    font-weight: bold;
+    padding: 8px;
+    font-size: 1rem;
+}
+
+/* Célula de horário (mesclada) */
+.horario-cell {
+    background-color: #f8f9fa;
+    font-weight: bold;
+    text-align: center;
+    vertical-align: middle;
+    border-right: 2px solid #dee2e6;
+    min-width: 80px;
+}
+
+/* Célula do funcionário */
 .funcionario-cell {
     text-align: left !important;
     font-weight: 600;
     background-color: #f8f9fa;
+    border-right: 2px solid #dee2e6;
 }
 
+/* Badges */
 .badge.bg-success {
     background-color: #28a745 !important;
     font-size: 0.8rem;
@@ -58,6 +88,18 @@ body {
     padding: 5px 8px;
 }
 
+.badge.bg-info {
+    background-color: #17a2b8 !important;
+    font-size: 0.8rem;
+    padding: 5px 8px;
+}
+
+.badge.bg-secondary {
+    background-color: #6c757d !important;
+    font-size: 0.8rem;
+    padding: 5px 8px;
+}
+
 @media (max-width: 768px) {
     .escala-table {
         font-size: 0.75rem;
@@ -67,13 +109,4 @@ body {
         font-size: 0.65rem;
         padding: 3px 5px;
     }
-}
-
-/* Estilo para linha de datas */
-.datas-header th {
-    background-color: #495057;
-    color: #ffc107;
-    font-size: 0.8rem;
-    padding: 5px;
-    font-weight: bold;
 }
