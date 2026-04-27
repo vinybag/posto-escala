@@ -5,14 +5,14 @@ import random
 # Estrutura fixa de horários
 HORARIOS_FIXOS = {
     'manha': {
-        '6-13': 2,   # 2 funcionários
-        '6-14': 4,   # 4 funcionários
-        '7-15': 2,   # 2 funcionários
+        '6-13': 2,
+        '6-14': 4,
+        '7-15': 2,
     },
     'tarde': {
-        '13-21': 2,  # 2 funcionários
-        '14-22': 4,  # 4 funcionários
-        '15-22': 2,  # 2 funcionários
+        '13-21': 2,
+        '14-22': 4,
+        '15-22': 2,
     }
 }
 
@@ -23,7 +23,7 @@ def gerar_escala_semanal():
     funcionarios = Funcionario.query.filter_by(ativo=True).all()
     
     if len(funcionarios) < 16:
-        return False  # Precisa de pelo menos 16 funcionários
+        return False
     
     # Data da próxima segunda-feira
     hoje = datetime.now().date()
@@ -32,45 +32,78 @@ def gerar_escala_semanal():
         dias_ate_segunda = 7
     segunda = hoje + timedelta(days=dias_ate_segunda)
     
-    # Embaralhar funcionários para distribuição aleatória
-    random.shuffle(funcionarios)
+    # Separar funcionários por preferência
+    somente_manha = [f for f in funcionarios if f.preferencia_turno == 'manha']
+    somente_tarde = [f for f in funcionarios if f.preferencia_turno == 'tarde']
+    misto = [f for f in funcionarios if f.preferencia_turno == 'misto']
     
-    # Atribuir horários fixos aos funcionários
+    # Embaralhar
+    random.shuffle(misto)
+    random.shuffle(somente_manha)
+    random.shuffle(somente_tarde)
+    
+    # Distribuir os mistos entre manhã e tarde
+    metade_mistos = len(misto) // 2
+    mistos_manha = misto[:metade_mistos]
+    mistos_tarde = misto[metade_mistos:]
+    
+    # Juntar turmas
+    turma_manha = somente_manha + mistos_manha
+    turma_tarde = somente_tarde + mistos_tarde
+    
+    # Completar vagas restantes
+    vagas_manha = 8  # total de vagas na manhã
+    vagas_tarde = 8  # total de vagas na tarde
+    
+    # Se ainda faltar, pegar do misto que sobrou
+    if len(turma_manha) < vagas_manha:
+        faltam = vagas_manha - len(turma_manha)
+        extras = mistos_tarde[:faltam]
+        turma_manha.extend(extras)
+        turma_tarde = [f for f in turma_tarde if f not in extras]
+    
+    if len(turma_tarde) < vagas_tarde:
+        faltam = vagas_tarde - len(turma_tarde)
+        extras = mistos_manha[:faltam]
+        turma_tarde.extend(extras)
+        turma_manha = [f for f in turma_manha if f not in extras]
+    
+    # Limitar a 8 por turno
+    turma_manha = turma_manha[:8]
+    turma_tarde = turma_tarde[:8]
+    
+    # Alocar horários fixos para cada turma
     alocacao_fixa = {}
     
-    # Alocar manhã
+    # Manhã
     idx = 0
     for horario, qtd in HORARIOS_FIXOS['manha'].items():
         for _ in range(qtd):
-            if idx < len(funcionarios):
-                alocacao_fixa[funcionarios[idx].id] = horario
+            if idx < len(turma_manha):
+                func = turma_manha[idx]
+                alocacao_fixa[func.id] = horario
                 idx += 1
     
-    # Alocar tarde
+    # Tarde
+    idx = 0
     for horario, qtd in HORARIOS_FIXOS['tarde'].items():
         for _ in range(qtd):
-            if idx < len(funcionarios):
-                alocacao_fixa[funcionarios[idx].id] = horario
+            if idx < len(turma_tarde):
+                func = turma_tarde[idx]
+                alocacao_fixa[func.id] = horario
                 idx += 1
     
-    # Para cada dia da semana (0=SEG a 6=DOM)
+    # Para cada dia da semana
     for dia in range(7):
         data = segunda + timedelta(days=dia)
         
-        # Definir folgas do dia
-        if dia == 6:  # DOMINGO: 4 folgas
-            num_folgas = 4
-        else:  # Outros dias: 2 folgas (para 16 func = escala 6x1)
-            num_folgas = 2
+        # DOMINGO: 4 folgas | Outros dias: 2 folgas
+        num_folgas = 4 if dia == 6 else 2
         
-        # Escolher aleatoriamente quem folga neste dia
         func_ids = list(alocacao_fixa.keys())
-        
-        # Garantir que ninguém folgue 2 vezes
         random.shuffle(func_ids)
         folgados = func_ids[:num_folgas]
         
-        # Alocar quem trabalha
         for func_id in func_ids:
             if func_id not in folgados:
                 horario = alocacao_fixa[func_id]

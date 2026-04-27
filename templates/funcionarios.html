@@ -14,6 +14,14 @@
                         <label for="nome" class="form-label">Nome Completo</label>
                         <input type="text" class="form-control" id="nome" name="nome" required>
                     </div>
+                    <div class="mb-3">
+                        <label for="preferencia" class="form-label">Preferência de Turno</label>
+                        <select class="form-control" id="preferencia" name="preferencia">
+                            <option value="misto">Sem preferência (Misto)</option>
+                            <option value="manha">Somente Manhã</option>
+                            <option value="tarde">Somente Tarde</option>
+                        </select>
+                    </div>
                     <button type="submit" class="btn btn-primary">Cadastrar</button>
                 </form>
             </div>
@@ -30,6 +38,7 @@
                     <thead>
                         <tr>
                             <th>Nome</th>
+                            <th>Preferência</th>
                             <th>Status</th>
                             <th>Ações</th>
                         </tr>
@@ -38,6 +47,15 @@
                         {% for func in funcionarios %}
                         <tr>
                             <td>{{ func.nome }}</td>
+                            <td>
+                                {% if func.preferencia_turno == 'manha' %}
+                                    <span class="badge bg-warning text-dark">Manhã</span>
+                                {% elif func.preferencia_turno == 'tarde' %}
+                                    <span class="badge bg-info">Tarde</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">Misto</span>
+                                {% endif %}
+                            </td>
                             <td>
                                 {% if func.ativo %}
                                 <span class="badge bg-success">Ativo</span>

@@ -9,14 +9,8 @@ import random
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'sua-chave-secreta-muito-segura-2024')
 
-# Configuração do banco de dados
-# No Railway, usa /data/posto.db (persistente)
-# Localmente, usa posto.db na raiz do projeto
-if os.path.exists('/data'):
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:////data/posto.db'
-else:
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///posto.db'
-
+# FORÇAR SQLite no diretório persistente do Railway
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:////data/posto.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # Inicializar banco de dados
@@ -64,8 +58,13 @@ def listar_funcionarios():
 @login_required
 def novo_funcionario():
     nome = request.form.get('nome')
+    preferencia = request.form.get('preferencia', 'misto')
+    
     if nome:
-        funcionario = Funcionario(nome=nome)
+        funcionario = Funcionario(
+            nome=nome,
+            preferencia_turno=preferencia
+        )
         db.session.add(funcionario)
         db.session.commit()
         flash('Funcionário cadastrado com sucesso!', 'success')
