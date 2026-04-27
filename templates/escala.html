@@ -1,28 +1,96 @@
 {% extends "base.html" %}
 {% block content %}
-<h2>Escala Semanal</h2>
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Escala Semanal</h2>
+    <div>
+        <a href="{{ url_for('gerar_escala') }}" class="btn btn-success me-2">Gerar Nova Escala</a>
+        <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">Voltar</a>
+    </div>
+</div>
 
-<div class="table-responsive mt-4">
-    <table class="table table-bordered table-striped">
-        <thead class="table-dark">
+<div class="table-responsive">
+    <table class="table table-bordered table-striped escala-table">
+        <thead>
+            <!-- Cabeçalho com dias da semana -->
             <tr>
-                <th>Dia</th>
-                <th>Horário</th>
-                <th>Funcionário</th>
+                <th style="width: 120px;">Horário</th>
+                <th style="width: 150px;">Funcionário</th>
+                {% set dias = ['SEG', 'TER', 'QUA', 'QUI', 'SEX', 'SAB', 'DOM'] %}
+                {% for dia in dias %}
+                <th class="text-center">{{ dia }}</th>
+                {% endfor %}
+            </tr>
+            <!-- Linha de datas -->
+            <tr class="datas-row">
+                <th></th>
+                <th></th>
+                {% for dia in range(7) %}
+                <th class="text-center">
+                    {% set data = escala | selectattr('dia_semana', 'equalto', dia) | list %}
+                    {% if data %}
+                        <small>{{ data[0].data.strftime('%d/%m') if data[0].data else '' }}</small>
+                    {% endif %}
+                </th>
+                {% endfor %}
             </tr>
         </thead>
         <tbody>
-            {% set dias = ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado', 'Domingo'] %}
-            {% for item in escala %}
-            <tr>
-                <td>{{ dias[item.dia_semana] }}</td>
-                <td>{{ item.horario }}</td>
-                <td>{{ item.funcionario.nome }}</td>
+            <!-- Manhã -->
+            <tr class="turno-header">
+                <td colspan="9"><strong>☀️ Turno da Manhã</strong></td>
             </tr>
+            
+            {% set horarios_manha = ['6-13', '6-14', '7-15'] %}
+            {% for horario in horarios_manha %}
+                {% set funcionarios_horario = escala | selectattr('horario', 'equalto', horario) | list %}
+                {% if funcionarios_horario %}
+                    {% for func_escala in funcionarios_horario %}
+                    <tr>
+                        <td class="horario-cell"><strong>{{ horario.replace('-', ' às ') }}</strong></td>
+                        <td class="funcionario-cell">{{ func_escala.funcionario.nome }}</td>
+                        {% for dia in range(7) %}
+                            {% set escala_dia = escala | selectattr('dia_semana', 'equalto', dia) | selectattr('horario', 'equalto', horario) | selectattr('funcionario_id', 'equalto', func_escala.funcionario_id) | list %}
+                            <td class="text-center status-cell">
+                                {% if escala_dia %}
+                                    <span class="badge badge-trabalho">Trabalho</span>
+                                {% else %}
+                                    <span class="badge badge-folga">Folga</span>
+                                {% endif %}
+                            </td>
+                        {% endfor %}
+                    </tr>
+                    {% endfor %}
+                {% endif %}
+            {% endfor %}
+
+            <!-- Tarde -->
+            <tr class="turno-header">
+                <td colspan="9"><strong>🌙 Turno da Tarde</strong></td>
+            </tr>
+            
+            {% set horarios_tarde = ['13-21', '14-22', '15-22'] %}
+            {% for horario in horarios_tarde %}
+                {% set funcionarios_horario = escala | selectattr('horario', 'equalto', horario) | list %}
+                {% if funcionarios_horario %}
+                    {% for func_escala in funcionarios_horario %}
+                    <tr>
+                        <td class="horario-cell"><strong>{{ horario.replace('-', ' às ') }}</strong></td>
+                        <td class="funcionario-cell">{{ func_escala.funcionario.nome }}</td>
+                        {% for dia in range(7) %}
+                            {% set escala_dia = escala | selectattr('dia_semana', 'equalto', dia) | selectattr('horario', 'equalto', horario) | selectattr('funcionario_id', 'equalto', func_escala.funcionario_id) | list %}
+                            <td class="text-center status-cell">
+                                {% if escala_dia %}
+                                    <span class="badge badge-trabalho">Trabalho</span>
+                                {% else %}
+                                    <span class="badge badge-folga">Folga</span>
+                                {% endif %}
+                            </td>
+                        {% endfor %}
+                    </tr>
+                    {% endfor %}
+                {% endif %}
             {% endfor %}
         </tbody>
     </table>
 </div>
-
-<a href="{{ url_for('dashboard') }}" class="btn btn-secondary">Voltar</a>
 {% endblock %}

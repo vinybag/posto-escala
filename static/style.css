@@ -18,3 +18,136 @@ body {
 .badge {
     font-size: 0.9em;
 }
+
+/* ========================================== */
+/* ESTILOS PARA TABELA DE ESCALA HORIZONTAL  */
+/* ========================================== */
+
+.escala-table {
+    background-color: white;
+    font-size: 0.9rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.escala-table thead th {
+    background-color: #343a40;
+    color: white;
+    vertical-align: middle;
+    text-align: center;
+    font-weight: 600;
+    padding: 10px;
+    border: 1px solid #454d55;
+}
+
+.escala-table .datas-row th {
+    background-color: #495057;
+    font-size: 0.8rem;
+    padding: 4px;
+    border: 1px solid #454d55;
+}
+
+.turno-header td {
+    background-color: #e9ecef;
+    font-weight: bold;
+    padding: 10px;
+    border: none;
+    font-size: 1rem;
+}
+
+.horario-cell {
+    font-weight: 600;
+    background-color: #f8f9fa;
+    white-space: nowrap;
+    border-right: 2px solid #dee2e6;
+    min-width: 100px;
+    text-align: center;
+}
+
+.funcionario-cell {
+    font-weight: 500;
+    background-color: #f8f9fa;
+    border-right: 2px solid #dee2e6;
+    min-width: 150px;
+}
+
+.status-cell {
+    min-width: 100px;
+    text-align: center;
+}
+
+.folguista-row td {
+    background-color: #fff9e6;
+    font-size: 0.85rem;
+    border-top: 2px solid #ffc107;
+}
+
+.folguista-row td:first-child {
+    font-weight: 600;
+}
+
+.badge {
+    font-size: 0.75rem;
+    padding: 4px 8px;
+    font-weight: 500;
+}
+
+/* Badges personalizados */
+.badge-trabalho {
+    background-color: #28a745;
+    color: white;
+}
+
+.badge-folga {
+    background-color: #ffc107;
+    color: #212529;
+}
+
+.badge-indisponivel {
+    background-color: #6c757d;
+    color: white;
+}
+
+/* Responsividade para mobile */
+@media (max-width: 768px) {
+    .escala-table {
+        font-size: 0.7rem;
+    }
+    
+    .escala-table th,
+    .escala-table td {
+        padding: 4px;
+    }
+    
+    .horario-cell {
+        min-width: 60px;
+    }
+    
+    .funcionario-cell {
+        min-width: 100px;
+    }
+    
+    .status-cell {
+        min-width: 70px;
+    }
+    
+    .badge {
+        font-size: 0.65rem;
+        padding: 2px 4px;
+    }
+}
+
+@media print {
+    .escala-table {
+        font-size: 0.8rem;
+    }
+    
+    .navbar, .btn {
+        display: none;
+    }
+    
+    .escala-table th {
+        background-color: #333 !important;
+        print-color-adjust: exact;
+        -webkit-print-color-adjust: exact;
+    }
+}
