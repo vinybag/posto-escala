@@ -9,15 +9,12 @@ import random
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'sua-chave-secreta-muito-segura-2024')
 
-# Configuração do banco de dados - PostgreSQL no Railway, SQLite local
-DATABASE_URL = os.environ.get('DATABASE_URL')
-if DATABASE_URL:
-    # Railway fornece DATABASE_URL com postgres://, mas SQLAlchemy precisa de postgresql://
-    if DATABASE_URL.startswith('postgres://'):
-        DATABASE_URL = DATABASE_URL.replace('postgres://', 'postgresql://', 1)
-    app.config['SQLALCHEMY_DATABASE_URI'] = DATABASE_URL
+# Configuração do banco de dados
+# No Railway, usa /data/posto.db (persistente)
+# Localmente, usa posto.db na raiz do projeto
+if os.path.exists('/data'):
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:////data/posto.db'
 else:
-    # Fallback para SQLite local
     app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///posto.db'
 
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
@@ -37,7 +34,7 @@ app.register_blueprint(auth_bp)
 def load_user(user_id):
     return Usuario.query.get(int(user_id))
 
-# Criar tabelas
+# Criar tabelas e admin padrão
 with app.app_context():
     db.create_all()
     # Criar admin padrão se não existir
@@ -46,7 +43,10 @@ with app.app_context():
         db.session.add(admin)
         db.session.commit()
 
-# Rotas principais
+# ============================================
+# ROTAS PRINCIPAIS
+# ============================================
+
 @app.route('/')
 @login_required
 def dashboard():
