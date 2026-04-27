@@ -2,11 +2,6 @@ from models import db, Funcionario, Escala
 from datetime import datetime, timedelta
 import random
 
-HORARIOS = {
-    'manha': ['6-13', '6-14', '7-15'],
-    'tarde': ['13-21', '14-22', '15-22']
-}
-
 def gerar_escala_semanal():
     funcionarios = Funcionario.query.filter_by(ativo=True).all()
     
@@ -20,62 +15,58 @@ def gerar_escala_semanal():
         dias_ate_segunda = 7
     segunda = hoje + timedelta(days=dias_ate_segunda)
     
-    # Controlar folgas da semana
-    folgas_semana = {f.id: 0 for f in funcionarios}
+    # Definir 1 dia de folga para cada funcionário
+    folgas = {}
+    for func in funcionarios:
+        dia_folga = random.randint(0, 6)
+        folgas[func.id] = dia_folga
     
-    # Para cada dia da semana
-    for dia in range(7):  # 0=segunda a 6=domingo
+    # Para cada dia da semana (0=segunda a 6=domingo)
+    for dia in range(7):
         data = segunda + timedelta(days=dia)
         
-        # Misturar funcionários para distribuir aleatoriamente
-        func_disponiveis = funcionarios.copy()
-        random.shuffle(func_disponiveis)
+        # Funcionários que trabalham neste dia (não estão de folga)
+        funcionarios_do_dia = [f for f in funcionarios if folgas[f.id] != dia]
         
-        # Alocar horários da manhã
-        alocar_turno(func_disponiveis, 'manha', data, dia, folgas_semana)
+        # Misturar para distribuir turnos aleatoriamente
+        random.shuffle(funcionarios_do_dia)
         
-        # Alocar horários da tarde
-        alocar_turno(func_disponiveis, 'tarde', data, dia, folgas_semana)
+        # Dividir em manhã e tarde
+        total = len(funcionarios_do_dia)
+        metade = total // 2
+        
+        funcionarios_manha = funcionarios_do_dia[:metade]
+        funcionarios_tarde = funcionarios_do_dia[metade:]
+        
+        # Alocar turno da manhã (6-13, 6-14, 7-15)
+        alocar_turno(funcionarios_manha, ['6-13', '6-14', '7-15'], data, dia)
+        
+        # Alocar turno da tarde (13-21, 14-22, 15-22)
+        alocar_turno(funcionarios_tarde, ['13-21', '14-22', '15-22'], data, dia)
     
     db.session.commit()
     return True
 
-def alocar_turno(funcionarios, turno, data, dia_semana, folgas_semana):
-    horarios = HORARIOS[turno]
-    random.shuffle(horarios)
+def alocar_turno(funcionarios, horarios, data, dia_semana):
+    """
+    Aloca cada funcionário em UM ÚNICO horário por dia
+    """
+    # Se não há funcionários, não faz nada
+    if not funcionarios:
+        return
     
-    for horario in horarios:
-        alocado = False
-        for func in funcionarios:
-            # Verificar se já trabalhou nesse dia
-            ja_trabalha = Escala.query.filter_by(
-                funcionario_id=func.id,
-                data=data
-            ).first()
-            
-            if ja_trabalha:
-                continue
-            
-            # Verificar se não excedeu folgas (6x1 = 1 folga por semana)
-            if folgas_semana[func.id] > 1:
-                continue
-            
-            # Criar escala
-            escala = Escala(
-                funcionario_id=func.id,
-                dia_semana=dia_semana,
-                horario=horario,
-                data=data,
-                ativa=True
-            )
-            db.session.add(escala)
-            alocado = True
-            break
+    # Distribuir funcionários nos horários disponíveis
+    for i, funcionario in enumerate(funcionarios):
+        # Cada funcionário pega um horário
+        indice_horario = i % len(horarios)
+        horario = horarios[indice_horario]
         
-        # Se não alocou, o funcionário terá folga nesse horário
-        if not alocado and funcionarios:
-            func = funcionarios[0]
-            if folgas_semana[func.id] < 1:
-                folgas_semana[func.id] += 1
-                # Registrar folga
-                func.ultima_folga = data
+        # Criar ÚNICO registro de escala para este funcionário neste dia
+        escala = Escala(
+            funcionario_id=funcionario.id,
+            dia_semana=dia_semana,
+            horario=horario,
+            data=data,
+            ativa=True
+        )
+        db.session.add(escala)
