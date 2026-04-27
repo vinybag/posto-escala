@@ -1,49 +1,70 @@
-/* Células da escala */
-.turno-cell {
-    background-color: #e9ecef;
-    font-weight: bold;
-    vertical-align: middle;
-    text-align: center;
-    border-right: 2px solid #dee2e6;
+body {
+    background-color: #f5f5f5;
 }
 
-.horario-cell {
-    background-color: #f8f9fa;
-    font-weight: 600;
+.navbar {
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.card {
+    margin-bottom: 20px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.table {
+    background-color: white;
+}
+
+.badge {
+    font-size: 0.75rem;
+}
+
+/* Tabela da Escala */
+.escala-table {
+    background-color: white;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.escala-table thead th {
+    background-color: #343a40;
+    color: white;
     text-align: center;
-    border-right: 2px solid #dee2e6;
     vertical-align: middle;
+    padding: 10px;
+}
+
+.escala-table tbody td {
+    text-align: center;
+    vertical-align: middle;
+    padding: 8px;
 }
 
 .funcionario-cell {
-    font-weight: 500;
-    background-color: white;
-    border-right: 2px solid #dee2e6;
+    text-align: left !important;
+    font-weight: 600;
+    background-color: #f8f9fa;
 }
 
-.status-cell {
-    min-width: 90px;
-    text-align: center;
-    vertical-align: middle;
-}
-
-.turno-header td {
-    background-color: #d4edda;
-    padding: 8px;
-    font-size: 1rem;
-    border-left: 4px solid #28a745;
-}
-
-/* Cores das badges */
 .badge.bg-success {
     background-color: #28a745 !important;
+    font-size: 0.8rem;
+    padding: 5px 8px;
 }
 
 .badge.bg-warning {
     background-color: #ffc107 !important;
     color: #212529 !important;
+    font-size: 0.8rem;
+    padding: 5px 8px;
 }
 
-.badge.bg-info {
-    background-color: #17a2b8 !important;
+@media (max-width: 768px) {
+    .escala-table {
+        font-size: 0.75rem;
+    }
+    
+    .badge {
+        font-size: 0.65rem;
+        padding: 3px 5px;
+    }
 }

@@ -2,7 +2,13 @@ from models import db, Funcionario, Escala
 from datetime import datetime, timedelta
 import random
 
+HORARIOS_MANHA = ['6-13', '6-14', '7-15']
+HORARIOS_TARDE = ['13-21', '14-22', '15-22']
+
 def gerar_escala_semanal():
+    # Limpar escala anterior
+    Escala.query.filter_by(ativa=True).update({Escala.ativa: False})
+    
     funcionarios = Funcionario.query.filter_by(ativo=True).all()
     
     if not funcionarios:
@@ -15,58 +21,49 @@ def gerar_escala_semanal():
         dias_ate_segunda = 7
     segunda = hoje + timedelta(days=dias_ate_segunda)
     
-    # Definir 1 dia de folga para cada funcionário
-    folgas = {}
+    # Para cada funcionário, escolher 1 dia de folga aleatório
+    dia_folga_por_func = {}
     for func in funcionarios:
-        dia_folga = random.randint(0, 6)
-        folgas[func.id] = dia_folga
+        dia_folga_por_func[func.id] = random.randint(0, 6)
     
-    # Para cada dia da semana (0=segunda a 6=domingo)
+    # Para cada dia da semana (0=SEG a 6=DOM)
     for dia in range(7):
         data = segunda + timedelta(days=dia)
         
-        # Funcionários que trabalham neste dia (não estão de folga)
-        funcionarios_do_dia = [f for f in funcionarios if folgas[f.id] != dia]
+        # Quem trabalha neste dia
+        trabalhadores = [f for f in funcionarios if dia_folga_por_func[f.id] != dia]
         
-        # Misturar para distribuir turnos aleatoriamente
-        random.shuffle(funcionarios_do_dia)
+        # Misturar
+        random.shuffle(trabalhadores)
         
-        # Dividir em manhã e tarde
-        total = len(funcionarios_do_dia)
-        metade = total // 2
+        # Dividir manhã e tarde
+        metade = len(trabalhadores) // 2
+        manha = trabalhadores[:metade]
+        tarde = trabalhadores[metade:]
         
-        funcionarios_manha = funcionarios_do_dia[:metade]
-        funcionarios_tarde = funcionarios_do_dia[metade:]
+        # Alocar manhã (cada um em UM horário)
+        for i, func in enumerate(manha):
+            horario = HORARIOS_MANHA[i % len(HORARIOS_MANHA)]
+            escala = Escala(
+                funcionario_id=func.id,
+                dia_semana=dia,
+                horario=horario,
+                data=data,
+                ativa=True
+            )
+            db.session.add(escala)
         
-        # Alocar turno da manhã (6-13, 6-14, 7-15)
-        alocar_turno(funcionarios_manha, ['6-13', '6-14', '7-15'], data, dia)
-        
-        # Alocar turno da tarde (13-21, 14-22, 15-22)
-        alocar_turno(funcionarios_tarde, ['13-21', '14-22', '15-22'], data, dia)
+        # Alocar tarde (cada um em UM horário)
+        for i, func in enumerate(tarde):
+            horario = HORARIOS_TARDE[i % len(HORARIOS_TARDE)]
+            escala = Escala(
+                funcionario_id=func.id,
+                dia_semana=dia,
+                horario=horario,
+                data=data,
+                ativa=True
+            )
+            db.session.add(escala)
     
     db.session.commit()
     return True
-
-def alocar_turno(funcionarios, horarios, data, dia_semana):
-    """
-    Aloca cada funcionário em UM ÚNICO horário por dia
-    """
-    # Se não há funcionários, não faz nada
-    if not funcionarios:
-        return
-    
-    # Distribuir funcionários nos horários disponíveis
-    for i, funcionario in enumerate(funcionarios):
-        # Cada funcionário pega um horário
-        indice_horario = i % len(horarios)
-        horario = horarios[indice_horario]
-        
-        # Criar ÚNICO registro de escala para este funcionário neste dia
-        escala = Escala(
-            funcionario_id=funcionario.id,
-            dia_semana=dia_semana,
-            horario=horario,
-            data=data,
-            ativa=True
-        )
-        db.session.add(escala)

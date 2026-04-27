@@ -9,97 +9,41 @@
 </div>
 
 <div class="table-responsive">
-    <table class="table table-bordered table-striped escala-table">
-        <thead>
+    <table class="table table-bordered escala-table">
+        <thead class="table-dark">
             <tr>
-                <th style="width: 120px;">Turno</th>
-                <th style="width: 100px;">Horário</th>
-                <th style="width: 180px;">Funcionário</th>
-                {% set dias = ['SEG', 'TER', 'QUA', 'QUI', 'SEX', 'SAB', 'DOM'] %}
-                {% for dia in dias %}
-                <th class="text-center">{{ dia }}</th>
-                {% endfor %}
+                <th>Funcionário</th>
+                <th>SEG</th>
+                <th>TER</th>
+                <th>QUA</th>
+                <th>QUI</th>
+                <th>SEX</th>
+                <th>SAB</th>
+                <th>DOM</th>
             </tr>
         </thead>
         <tbody>
-            <!-- Manhã -->
-            <tr class="turno-header">
-                <td colspan="10"><strong>☀️ Turno da Manhã</strong></td>
-            </tr>
-            
-            {% set horarios_manha = ['6-13', '6-14', '7-15'] %}
-            {% for horario in horarios_manha %}
-                {% set funcionarios_horario = [] %}
-                {% for item in escala if item.horario == horario %}
-                    {% if item.funcionario not in funcionarios_horario %}
-                        {% set _ = funcionarios_horario.append(item.funcionario) %}
-                    {% endif %}
-                {% endfor %}
-                
-                {% for func in funcionarios_horario %}
-                <tr>
-                    {% if loop.first %}
-                    <td class="turno-cell" rowspan="{{ funcionarios_horario|length }}"><strong>Manhã</strong></td>
-                    <td class="horario-cell" rowspan="{{ funcionarios_horario|length }}"><strong>{{ horario.replace('-', ' às ') }}</strong></td>
-                    {% endif %}
-                    <td class="funcionario-cell">{{ func.nome }}</td>
-                    {% for dia in range(7) %}
-                        {% set escala_dia = escala | selectattr('dia_semana', 'equalto', dia) | selectattr('funcionario_id', 'equalto', func.id) | list %}
-                        <td class="text-center status-cell">
-                            {% if escala_dia %}
-                                {% set item = escala_dia[0] %}
-                                {% if item.horario == horario %}
-                                    <span class="badge bg-success">Trabalho</span>
-                                {% else %}
-                                    <span class="badge bg-info">{{ item.horario.replace('-', 'às') }}</span>
-                                {% endif %}
-                            {% else %}
-                                <span class="badge bg-warning text-dark">Folga</span>
-                            {% endif %}
-                        </td>
-                    {% endfor %}
-                </tr>
-                {% endfor %}
+            {% set funcionarios = [] %}
+            {% for item in escala %}
+                {% if item.funcionario not in funcionarios %}
+                    {% set _ = funcionarios.append(item.funcionario) %}
+                {% endif %}
             {% endfor %}
-
-            <!-- Tarde -->
-            <tr class="turno-header">
-                <td colspan="10"><strong>🌙 Turno da Tarde</strong></td>
-            </tr>
             
-            {% set horarios_tarde = ['13-21', '14-22', '15-22'] %}
-            {% for horario in horarios_tarde %}
-                {% set funcionarios_horario = [] %}
-                {% for item in escala if item.horario == horario %}
-                    {% if item.funcionario not in funcionarios_horario %}
-                        {% set _ = funcionarios_horario.append(item.funcionario) %}
-                    {% endif %}
+            {% for func in funcionarios %}
+            <tr>
+                <td class="funcionario-cell"><strong>{{ func.nome }}</strong></td>
+                {% for dia in range(7) %}
+                    {% set registro = escala | selectattr('funcionario_id', 'equalto', func.id) | selectattr('dia_semana', 'equalto', dia) | list %}
+                    <td class="text-center">
+                        {% if registro %}
+                            <span class="badge bg-success">{{ registro[0].horario.replace('-', ' às ') }}</span>
+                        {% else %}
+                            <span class="badge bg-warning text-dark">FOLGA</span>
+                        {% endif %}
+                    </td>
                 {% endfor %}
-                
-                {% for func in funcionarios_horario %}
-                <tr>
-                    {% if loop.first %}
-                    <td class="turno-cell" rowspan="{{ funcionarios_horario|length }}"><strong>Tarde</strong></td>
-                    <td class="horario-cell" rowspan="{{ funcionarios_horario|length }}"><strong>{{ horario.replace('-', ' às ') }}</strong></td>
-                    {% endif %}
-                    <td class="funcionario-cell">{{ func.nome }}</td>
-                    {% for dia in range(7) %}
-                        {% set escala_dia = escala | selectattr('dia_semana', 'equalto', dia) | selectattr('funcionario_id', 'equalto', func.id) | list %}
-                        <td class="text-center status-cell">
-                            {% if escala_dia %}
-                                {% set item = escala_dia[0] %}
-                                {% if item.horario == horario %}
-                                    <span class="badge bg-success">Trabalho</span>
-                                {% else %}
-                                    <span class="badge bg-info">{{ item.horario.replace('-', 'às') }}</span>
-                                {% endif %}
-                            {% else %}
-                                <span class="badge bg-warning text-dark">Folga</span>
-                            {% endif %}
-                        </td>
-                    {% endfor %}
-                </tr>
-                {% endfor %}
+            </tr>
             {% endfor %}
         </tbody>
     </table>
