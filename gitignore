@@ -4,10 +4,11 @@ env/
 __pycache__/
 *.pyc
 
-# Banco de dados SQLite
+# Banco de dados SQLite - NUNCA ENVIAR PARA O GITHUB
 *.db
+/data/
 
-# Arquivos do VSCode (opcional, pode ignorar)
+# Arquivos do VSCode
 .vscode/
 
 # Arquivos de sistema
