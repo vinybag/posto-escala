@@ -11,6 +11,7 @@
 <div class="table-responsive">
     <table class="table table-bordered escala-table">
         <thead class="table-dark">
+            <!-- Linha 1: Dias da semana -->
             <tr>
                 <th>Funcionário</th>
                 <th>SEG</th>
@@ -20,6 +21,18 @@
                 <th>SEX</th>
                 <th>SAB</th>
                 <th>DOM</th>
+            </tr>
+            <!-- Linha 2: Datas -->
+            <tr class="datas-header">
+                <th></th>
+                {% for dia in range(7) %}
+                    {% set registro_data = escala | selectattr('dia_semana', 'equalto', dia) | list %}
+                    {% if registro_data %}
+                        <th>{{ registro_data[0].data.strftime('%d/%m') }}</th>
+                    {% else %}
+                        <th>-</th>
+                    {% endif %}
+                {% endfor %}
             </tr>
         </thead>
         <tbody>

@@ -68,3 +68,12 @@ body {
         padding: 3px 5px;
     }
 }
+
+/* Estilo para linha de datas */
+.datas-header th {
+    background-color: #495057;
+    color: #ffc107;
+    font-size: 0.8rem;
+    padding: 5px;
+    font-weight: bold;
+}
