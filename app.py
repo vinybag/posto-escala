@@ -9,7 +9,11 @@ import random
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'sua-chave-secreta-muito-segura-2024')
 
-# FORÇAR SQLite no diretório persistente do Railway
+# Garantir que o diretório /data existe
+if not os.path.exists('/data'):
+    os.makedirs('/data', exist_ok=True)
+
+# SQLite no diretório persistente
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:////data/posto.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
@@ -30,12 +34,15 @@ def load_user(user_id):
 
 # Criar tabelas e admin padrão
 with app.app_context():
-    db.create_all()
-    # Criar admin padrão se não existir
-    if not Usuario.query.filter_by(username='admin').first():
-        admin = Usuario(username='admin', password='admin123', is_admin=True)
-        db.session.add(admin)
-        db.session.commit()
+    try:
+        db.create_all()
+        # Criar admin padrão se não existir
+        if not Usuario.query.filter_by(username='admin').first():
+            admin = Usuario(username='admin', password='admin123', is_admin=True)
+            db.session.add(admin)
+            db.session.commit()
+    except Exception as e:
+        print(f"Erro ao criar banco: {e}")
 
 # ============================================
 # ROTAS PRINCIPAIS
@@ -88,15 +95,19 @@ def gerar_escala():
     Escala.query.filter_by(ativa=True).update({Escala.ativa: False})
     
     # Gerar nova escala
-    gerar_escala_semanal()
+    resultado = gerar_escala_semanal()
     
-    flash('Nova escala gerada com sucesso!', 'success')
+    if resultado:
+        flash('Nova escala gerada com sucesso!', 'success')
+    else:
+        flash('Erro: É necessário ter pelo menos 16 funcionários cadastrados!', 'error')
+    
     return redirect(url_for('dashboard'))
 
 @app.route('/escala')
 @login_required
 def ver_escala():
-    escala = Escala.query.filter_by(ativa=True).order_by(Escala.dia_semana, Escala.horario).all()
+    escala = Escala.query.filter_by(ativa=True).order_by(Escala.horario, Escala.funcionario_id, Escala.dia_semana).all()
     return render_template('escala.html', escala=escala)
 
 if __name__ == '__main__':
