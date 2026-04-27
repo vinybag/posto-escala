@@ -51,31 +51,28 @@ def gerar_escala_semanal():
     turma_manha = somente_manha + mistos_manha
     turma_tarde = somente_tarde + mistos_tarde
     
-    # Completar vagas restantes
-    vagas_manha = 8  # total de vagas na manhã
-    vagas_tarde = 8  # total de vagas na tarde
+    # Completar vagas
+    vagas_manha = 8
+    vagas_tarde = 8
     
-    # Se ainda faltar, pegar do misto que sobrou
     if len(turma_manha) < vagas_manha:
         faltam = vagas_manha - len(turma_manha)
-        extras = mistos_tarde[:faltam]
+        extras = turma_tarde[-faltam:] if len(turma_tarde) >= faltam else []
         turma_manha.extend(extras)
         turma_tarde = [f for f in turma_tarde if f not in extras]
     
     if len(turma_tarde) < vagas_tarde:
         faltam = vagas_tarde - len(turma_tarde)
-        extras = mistos_manha[:faltam]
+        extras = turma_manha[-faltam:] if len(turma_manha) >= faltam else []
         turma_tarde.extend(extras)
         turma_manha = [f for f in turma_manha if f not in extras]
     
-    # Limitar a 8 por turno
     turma_manha = turma_manha[:8]
     turma_tarde = turma_tarde[:8]
     
-    # Alocar horários fixos para cada turma
+    # Alocar horários fixos
     alocacao_fixa = {}
     
-    # Manhã
     idx = 0
     for horario, qtd in HORARIOS_FIXOS['manha'].items():
         for _ in range(qtd):
@@ -84,7 +81,6 @@ def gerar_escala_semanal():
                 alocacao_fixa[func.id] = horario
                 idx += 1
     
-    # Tarde
     idx = 0
     for horario, qtd in HORARIOS_FIXOS['tarde'].items():
         for _ in range(qtd):
@@ -93,19 +89,36 @@ def gerar_escala_semanal():
                 alocacao_fixa[func.id] = horario
                 idx += 1
     
-    # Para cada dia da semana
+    # ============================================
+    # GARANTIR QUE CADA FUNCIONÁRIO FOLGA 1 DIA
+    # ============================================
+    
+    func_ids = list(alocacao_fixa.keys())
+    random.shuffle(func_ids)
+    
+    # Total de folgas necessárias: 16 funcionários × 1 folga = 16 folgas
+    # Distribuídas: 2 por dia (seg-sáb) + 4 no domingo = 12 + 4 = 16 ✓
+    
+    # Criar lista de folgas: [0,0, 1,1, 2,2, 3,3, 4,4, 5,5, 6,6,6,6]
+    folgas_necessarias = []
+    for dia in range(6):  # SEG a SAB = 2 folgas cada
+        folgas_necessarias.extend([dia, dia])
+    folgas_necessarias.extend([6, 6, 6, 6])  # DOM = 4 folgas
+    
+    random.shuffle(folgas_necessarias)
+    
+    # Atribuir uma folga para cada funcionário
+    folga_por_funcionario = {}
+    for i, func_id in enumerate(func_ids):
+        folga_por_funcionario[func_id] = folgas_necessarias[i]
+    
+    # Para cada dia da semana, criar escala
     for dia in range(7):
         data = segunda + timedelta(days=dia)
         
-        # DOMINGO: 4 folgas | Outros dias: 2 folgas
-        num_folgas = 4 if dia == 6 else 2
-        
-        func_ids = list(alocacao_fixa.keys())
-        random.shuffle(func_ids)
-        folgados = func_ids[:num_folgas]
-        
         for func_id in func_ids:
-            if func_id not in folgados:
+            # Se NÃO é o dia de folga deste funcionário, ele trabalha
+            if folga_por_funcionario[func_id] != dia:
                 horario = alocacao_fixa[func_id]
                 escala = Escala(
                     funcionario_id=func_id,
