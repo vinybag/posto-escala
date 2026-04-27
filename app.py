@@ -100,9 +100,9 @@ def gerar_escala():
     if resultado:
         flash('Nova escala gerada com sucesso!', 'success')
     else:
-        flash('Erro: É necessário ter pelo menos 16 funcionários cadastrados!', 'error')
+        flash('Erro: Não há funcionários cadastrados!', 'error')
     
-    return redirect(url_for('dashboard'))
+    return redirect(url_for('ver_escala'))
 
 @app.route('/escala')
 @login_required
