@@ -1,3 +1,4 @@
+import os
 from flask import Flask, render_template, request, redirect, url_for, flash
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from models import db, Usuario, Funcionario, Escala
@@ -6,8 +7,19 @@ from datetime import datetime, timedelta
 import random
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'sua-chave-secreta-muito-segura-2024'
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///posto.db'
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'sua-chave-secreta-muito-segura-2024')
+
+# Configuração do banco de dados - PostgreSQL no Railway, SQLite local
+DATABASE_URL = os.environ.get('DATABASE_URL')
+if DATABASE_URL:
+    # Railway fornece DATABASE_URL com postgres://, mas SQLAlchemy precisa de postgresql://
+    if DATABASE_URL.startswith('postgres://'):
+        DATABASE_URL = DATABASE_URL.replace('postgres://', 'postgresql://', 1)
+    app.config['SQLALCHEMY_DATABASE_URI'] = DATABASE_URL
+else:
+    # Fallback para SQLite local
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///posto.db'
+
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # Inicializar banco de dados
