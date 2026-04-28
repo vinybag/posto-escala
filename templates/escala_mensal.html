@@ -1,0 +1,136 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Escala - {{ ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 
+                      'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'][mes_escala.mes-1] }} 
+        / {{ mes_escala.ano }}</h2>
+    <div>
+        <!-- Dropdown de meses -->
+        <div class="btn-group me-2">
+            <button type="button" class="btn btn-info dropdown-toggle" data-bs-toggle="dropdown">
+                📅 Selecionar Mês
+            </button>
+            <ul class="dropdown-menu">
+                {% for m in meses_disponiveis %}
+                <li>
+                    <a class="dropdown-item {% if m.id == mes_escala.id %}active{% endif %}" 
+                       href="{{ url_for('ver_escala_mensal', mes_id=m.id) }}">
+                        {{ ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 
+                            'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'][m.mes-1] }} / {{ m.ano }}
+                    </a>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+        
+        <a href="{{ url_for('gerar_escala_mensal') }}" class="btn btn-success me-2">+ Nova Escala</a>
+        <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">Voltar</a>
+    </div>
+</div>
+
+<!-- Agrupar por semana -->
+{% set escalas_por_semana = {} %}
+{% for item in escala %}
+    {% set semana = item.data.isocalendar()[1] %}
+    {% if semana not in escalas_por_semana %}
+        {% set _ = escalas_por_semana.update({semana: []}) %}
+    {% endif %}
+    {% set _ = escalas_por_semana[semana].append(item) %}
+{% endfor %}
+
+{% for semana, itens in escalas_por_semana.items() %}
+<div class="card mb-4">
+    <div class="card-header bg-secondary text-white">
+        <h5 class="mb-0">
+            Semana {{ loop.index }} 
+            ({{ itens[0].data.strftime('%d/%m') }} a {{ itens[-1].data.strftime('%d/%m') }})
+        </h5>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-bordered escala-table mb-0">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Horário</th>
+                        <th>Funcionário</th>
+                        <th>SEG</th>
+                        <th>TER</th>
+                        <th>QUA</th>
+                        <th>QUI</th>
+                        <th>SEX</th>
+                        <th>SAB</th>
+                        <th>DOM</th>
+                    </tr>
+                    <tr class="datas-header">
+                        <th></th>
+                        <th></th>
+                        {% for dia in range(7) %}
+                            {% set data_semana = itens[0].data - timedelta(days=itens[0].data.weekday() - dia) if itens else None %}
+                            <th>{{ data_semana.strftime('%d/%m') if data_semana else '-' }}</th>
+                        {% endfor %}
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Mesma estrutura da escala semanal -->
+                    <!-- MANHÃ -->
+                    {% for horario in ['6-13', '6-14', '7-15'] %}
+                        {% set funcs = [] %}
+                        {% for item in itens if item.horario == horario %}
+                            {% if item.funcionario not in funcs %}
+                                {% set _ = funcs.append(item.funcionario) %}
+                            {% endif %}
+                        {% endfor %}
+                        {% for func in funcs %}
+                        <tr>
+                            {% if loop.first %}
+                            <td rowspan="{{ funcs|length }}"><strong>{{ horario.replace('-', ' às ') }}</strong></td>
+                            {% endif %}
+                            <td>{{ func.nome }}</td>
+                            {% for dia in range(7) %}
+                                {% set reg = itens | selectattr('funcionario_id', 'equalto', func.id) | selectattr('dia_semana', 'equalto', dia) | list %}
+                                <td class="text-center">
+                                    {% if reg %}
+                                        <span class="badge bg-success">{{ reg[0].horario.replace('-', ' às ') }}</span>
+                                    {% else %}
+                                        <span class="badge bg-warning text-dark">FOLGA</span>
+                                    {% endif %}
+                                </td>
+                            {% endfor %}
+                        </tr>
+                        {% endfor %}
+                    {% endfor %}
+                    
+                    <!-- TARDE -->
+                    {% for horario in ['13-21', '14-22', '15-22'] %}
+                        {% set funcs = [] %}
+                        {% for item in itens if item.horario == horario %}
+                            {% if item.funcionario not in funcs %}
+                                {% set _ = funcs.append(item.funcionario) %}
+                            {% endif %}
+                        {% endfor %}
+                        {% for func in funcs %}
+                        <tr>
+                            {% if loop.first %}
+                            <td rowspan="{{ funcs|length }}"><strong>{{ horario.replace('-', ' às ') }}</strong></td>
+                            {% endif %}
+                            <td>{{ func.nome }}</td>
+                            {% for dia in range(7) %}
+                                {% set reg = itens | selectattr('funcionario_id', 'equalto', func.id) | selectattr('dia_semana', 'equalto', dia) | list %}
+                                <td class="text-center">
+                                    {% if reg %}
+                                        <span class="badge bg-success">{{ reg[0].horario.replace('-', ' às ') }}</span>
+                                    {% else %}
+                                        <span class="badge bg-warning text-dark">FOLGA</span>
+                                    {% endif %}
+                                </td>
+                            {% endfor %}
+                        </tr>
+                        {% endfor %}
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endfor %}
+{% endblock %}

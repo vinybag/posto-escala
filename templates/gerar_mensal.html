@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0">Gerar Escala Mensal</h4>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    <div class="mb-3">
+                        <label class="form-label">Selecione o mês:</label>
+                        <select class="form-select" name="mes" required>
+                            {% for mes, ano in meses %}
+                            <option value="{{ mes }}">
+                                {{ ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 
+                                    'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'][mes-1] }}
+                                / {{ ano }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                        <input type="hidden" name="ano" value="{{ meses[0][1] }}">
+                    </div>
+                    <button type="submit" class="btn btn-success w-100">Gerar Escala Mensal</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Atualizar ano automaticamente ao selecionar mês
+document.querySelector('select[name="mes"]').addEventListener('change', function() {
+    const mes = parseInt(this.value);
+    const hoje = new Date();
+    let ano = hoje.getFullYear();
+    if (mes < hoje.getMonth() + 1) {
+        ano = hoje.getFullYear() + 1;
+    }
+    document.querySelector('input[name="ano"]').value = ano;
+});
+</script>
+{% endblock %}

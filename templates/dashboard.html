@@ -3,7 +3,7 @@
 <h2>Dashboard</h2>
 
 <div class="row mt-4">
-    <div class="col-md-6">
+    <div class="col-md-4">
         <div class="card">
             <div class="card-header">
                 <h5>Funcionários Cadastrados</h5>
@@ -15,14 +15,26 @@
         </div>
     </div>
     
-    <div class="col-md-6">
+    <div class="col-md-4">
         <div class="card">
             <div class="card-header">
-                <h5>Gerar Nova Escala</h5>
+                <h5>Escala Semanal</h5>
             </div>
             <div class="card-body">
-                <p>Cria automaticamente a escala semanal 6x1</p>
-                <a href="{{ url_for('gerar_escala') }}" class="btn btn-success">Gerar Escala</a>
+                <p>Cria escala da próxima semana (6x1)</p>
+                <a href="{{ url_for('gerar_escala') }}" class="btn btn-success">Gerar Escala Semanal</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                <h5>Escala Mensal</h5>
+            </div>
+            <div class="card-body">
+                <p>Gera escala para o mês inteiro</p>
+                <a href="{{ url_for('gerar_escala_mensal') }}" class="btn btn-info">Gerar Escala Mensal</a>
             </div>
         </div>
     </div>

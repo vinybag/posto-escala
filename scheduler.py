@@ -1,154 +1,56 @@
-from models import db, Funcionario, Escala
+from models import db, Funcionario, Escala, MesEscala
 from datetime import datetime, timedelta
 import random
+import calendar
 
 HORARIOS_MANHA = ['6-13', '6-14', '7-15']
 HORARIOS_TARDE = ['13-21', '14-22', '15-22']
 
-def gerar_escala_semanal():
-    # Limpar escala atual
-    Escala.query.filter_by(ativa=True).update({Escala.ativa: False})
-    
+def gerar_escala_mensal(mes=None, ano=None):
+    """
+    Gera escala para um mês inteiro.
+    Se mes/ano não informados, usa o próximo mês.
+    """
     funcionarios = Funcionario.query.filter_by(ativo=True).all()
     
     if not funcionarios:
-        return False
+        return None
     
-    # Data da próxima segunda-feira
+    # Definir mês e ano
     hoje = datetime.now().date()
-    dias_ate_segunda = (7 - hoje.weekday()) % 7
-    if dias_ate_segunda == 0:
-        dias_ate_segunda = 7
-    segunda = hoje + timedelta(days=dias_ate_segunda)
     
-    # Buscar histórico para rodízio de domingo e turnos
-    todas_escalas = Escala.query.order_by(Escala.data.desc()).all()
+    if mes is None or ano is None:
+        # Próximo mês
+        if hoje.month == 12:
+            mes = 1
+            ano = hoje.year + 1
+        else:
+            mes = hoje.month + 1
+            ano = hoje.year
     
-    # ============================================
-    # RODÍZIO DE DOMINGO (já existente)
-    # ============================================
+    # Criar registro do mês
+    mes_escala = MesEscala(
+        mes=mes,
+        ano=ano,
+        ativo=True
+    )
+    db.session.add(mes_escala)
+    db.session.flush()  # Para obter o ID
     
-    historico_domingo = set()
-    for func in funcionarios:
-        for e in todas_escalas:
-            if e.funcionario_id == func.id and e.dia_semana == 6:
-                historico_domingo.add(func.id)
-                break
-    
-    ultima_semana_folgas = {}
-    if todas_escalas:
-        data_ref = todas_escalas[0].data
-        inicio_ultima_semana = data_ref - timedelta(days=data_ref.weekday())
-        fim_ultima_semana = inicio_ultima_semana + timedelta(days=6)
-        
-        for dia in range(7):
-            data = inicio_ultima_semana + timedelta(days=dia)
-            funcs_trabalharam = set()
-            for e in todas_escalas:
-                if e.data == data:
-                    funcs_trabalharam.add(e.funcionario_id)
-            for func in funcionarios:
-                if func.id not in funcs_trabalharam:
-                    ultima_semana_folgas[func.id] = dia
-    
-    # ============================================
-    # RODÍZIO DE TURNO PARA MISTOS (NOVO!)
-    # ============================================
-    
-    # Verificar quantas semanas cada misto ficou em cada turno
-    historico_turnos = {}
-    for func in funcionarios:
-        if func.preferencia_turno == 'misto':
-            semanas_manha = 0
-            semanas_tarde = 0
-            semana_atual = None
-            turno_atual = None
-            
-            for e in todas_escalas:
-                if e.funcionario_id == func.id:
-                    num_semana = e.data.isocalendar()[1]  # Número da semana
-                    
-                    if semana_atual != num_semana:
-                        if turno_atual == 'manha':
-                            semanas_manha += 1
-                        elif turno_atual == 'tarde':
-                            semanas_tarde += 1
-                        semana_atual = num_semana
-                    
-                    if e.horario in HORARIOS_MANHA:
-                        turno_atual = 'manha'
-                    elif e.horario in HORARIOS_TARDE:
-                        turno_atual = 'tarde'
-            
-            # Último turno
-            if turno_atual == 'manha':
-                semanas_manha += 1
-            elif turno_atual == 'tarde':
-                semanas_tarde += 1
-            
-            historico_turnos[func.id] = {
-                'manha': semanas_manha,
-                'tarde': semanas_tarde,
-                'ultimo_turno': turno_atual
-            }
+    # Buscar histórico do mês anterior para regras
+    historico = _carregar_historico(funcionarios, mes, ano)
     
     # Separar funcionários por preferência
     somente_manha = [f for f in funcionarios if f.preferencia_turno == 'manha']
     somente_tarde = [f for f in funcionarios if f.preferencia_turno == 'tarde']
     misto = [f for f in funcionarios if f.preferencia_turno == 'misto']
     
-    # Distribuir mistos com RODÍZIO
-    # Prioridade: quem está há mais tempo sem mudar de turno
-    misto_prioridade = []
-    for func in misto:
-        if func.id in historico_turnos:
-            hist = historico_turnos[func.id]
-            # Se ficou muito tempo no mesmo turno, prioridade para mudar
-            if hist['ultimo_turno'] == 'manha':
-                prioridade = hist['manha']  # Quanto maior, mais precisa ir pra tarde
-            elif hist['ultimo_turno'] == 'tarde':
-                prioridade = -hist['tarde']  # Quanto menor (negativo), mais precisa ir pra manhã
-            else:
-                prioridade = 0
-        else:
-            prioridade = 0  # Novo funcionário, sem histórico
-        
-        misto_prioridade.append((func, prioridade))
+    # Distribuir mistos com rodízio
+    turma_manha, turma_tarde = _distribuir_turnos(
+        somente_manha, somente_tarde, misto, historico
+    )
     
-    # Ordenar por prioridade (quem precisa mudar primeiro)
-    random.shuffle(misto_prioridade)
-    
-    # Distribuir entre manhã e tarde
-    turma_manha = list(somente_manha)
-    turma_tarde = list(somente_tarde)
-    
-    # Calcular quantos mistos vão para cada turno
-    # Tentar equilibrar os turnos
-    total_manha = len(somente_manha)
-    total_tarde = len(somente_tarde)
-    
-    for func, prioridade in misto_prioridade:
-        # Se já está equilibrado, sortear
-        if abs(total_manha - total_tarde) <= 1:
-            if random.random() < 0.5:
-                turma_manha.append(func)
-                total_manha += 1
-            else:
-                turma_tarde.append(func)
-                total_tarde += 1
-        # Se manhã tem menos, manda pra manhã
-        elif total_manha < total_tarde:
-            turma_manha.append(func)
-            total_manha += 1
-        # Se tarde tem menos, manda pra tarde
-        else:
-            turma_tarde.append(func)
-            total_tarde += 1
-    
-    random.shuffle(turma_manha)
-    random.shuffle(turma_tarde)
-    
-    # Alocar horários
+    # Alocar horários fixos
     alocacao_fixa = {}
     
     for i, func in enumerate(turma_manha):
@@ -159,27 +61,128 @@ def gerar_escala_semanal():
         horario = HORARIOS_TARDE[i % len(HORARIOS_TARDE)]
         alocacao_fixa[func.id] = horario
     
-    # ============================================
-    # ATRIBUIR FOLGAS (com rodízio de domingo)
-    # ============================================
+    # Obter todas as segundas-feiras do mês
+    segundas = _obter_segundas_do_mes(mes, ano)
     
-    total_funcionarios = len(alocacao_fixa)
+    # Para cada semana do mês
+    for num_semana, segunda in enumerate(segundas):
+        # Atribuir folgas da semana
+        folga_por_funcionario = _atribuir_folgas_semana(
+            alocacao_fixa, historico, num_semana
+        )
+        
+        # Criar escala para cada dia da semana
+        for dia in range(7):
+            data = segunda + timedelta(days=dia)
+            
+            # Verificar se a data pertence ao mês
+            if data.month != mes:
+                continue
+            
+            for func_id in alocacao_fixa:
+                if folga_por_funcionario.get(func_id) == dia:
+                    continue  # Folga
+                
+                horario = alocacao_fixa[func_id]
+                escala = Escala(
+                    funcionario_id=func_id,
+                    mes_escala_id=mes_escala.id,
+                    dia_semana=dia,
+                    horario=horario,
+                    data=data,
+                    ativa=True
+                )
+                db.session.add(escala)
+    
+    db.session.commit()
+    return mes_escala.id
+
+
+def _carregar_historico(funcionarios, mes, ano):
+    """Carrega histórico do mês anterior"""
+    historico = {
+        'domingo': set(),
+        'turnos': {},
+        'ultimas_folgas': {}
+    }
+    
+    # Buscar mês anterior
+    if mes == 1:
+        mes_ant = 12
+        ano_ant = ano - 1
+    else:
+        mes_ant = mes - 1
+        ano_ant = ano
+    
+    mes_anterior = MesEscala.query.filter_by(mes=mes_ant, ano=ano_ant).first()
+    
+    if mes_anterior:
+        escalas_anteriores = Escala.query.filter_by(mes_escala_id=mes_anterior.id).all()
+        
+        for func in funcionarios:
+            semanas_manha = 0
+            semanas_tarde = 0
+            
+            for e in escalas_anteriores:
+                if e.funcionario_id == func.id:
+                    # Domingo
+                    if e.dia_semana == 6:
+                        historico['domingo'].add(func.id)
+                    
+                    # Turnos
+                    if e.horario in HORARIOS_MANHA:
+                        semanas_manha += 1
+                    elif e.horario in HORARIOS_TARDE:
+                        semanas_tarde += 1
+            
+            historico['turnos'][func.id] = {
+                'manha': semanas_manha,
+                'tarde': semanas_tarde
+            }
+    
+    return historico
+
+
+def _distribuir_turnos(somente_manha, somente_tarde, misto, historico):
+    """Distribui funcionários mistos entre turnos com rodízio"""
+    turma_manha = list(somente_manha)
+    turma_tarde = list(somente_tarde)
+    
+    random.shuffle(misto)
+    
+    for func in misto:
+        hist = historico['turnos'].get(func.id, {'manha': 0, 'tarde': 0})
+        
+        # Priorizar o turno que o funcionário menos fez
+        if hist['manha'] > hist['tarde']:
+            turma_tarde.append(func)
+        elif hist['tarde'] > hist['manha']:
+            turma_manha.append(func)
+        else:
+            # Aleatório se equilibrado
+            if random.random() < 0.5:
+                turma_manha.append(func)
+            else:
+                turma_tarde.append(func)
+    
+    return turma_manha, turma_tarde
+
+
+def _atribuir_folgas_semana(alocacao_fixa, historico, num_semana):
+    """Atribui folgas para uma semana do mês"""
     func_ids = list(alocacao_fixa.keys())
     random.shuffle(func_ids)
     
-    # 4 para domingo
+    # 4 para domingo (com rodízio)
     candidatos_domingo = []
     for func_id in func_ids:
-        if func_id not in historico_domingo:
+        if func_id not in historico['domingo']:
             candidatos_domingo.append((func_id, 0))
         else:
             candidatos_domingo.append((func_id, 1))
     
     candidatos_domingo.sort(key=lambda x: x[1])
-    folgados_domingo = [c[0] for c in candidatos_domingo[:4]]
-    
-    if len(folgados_domingo) < 4:
-        folgados_domingo = func_ids[:4]
+    folgados_domingo = set(c[0] for c in candidatos_domingo[:4])
     
     folga_por_funcionario = {}
     
@@ -187,41 +190,20 @@ def gerar_escala_semanal():
         if func_id in folgados_domingo:
             folga_por_funcionario[func_id] = 6
         else:
-            dia_proibido = ultima_semana_folgas.get(func_id, -1)
-            dias_disponiveis = [d for d in range(6) if d != dia_proibido]
-            
-            if not dias_disponiveis:
-                dias_disponiveis = list(range(6))
-            
-            dia_escolhido = random.choice(dias_disponiveis)
-            
-            count_dia = sum(1 for d in folga_por_funcionario.values() if d == dia_escolhido)
-            if count_dia >= 2:
-                for dia_tentativa in range(6):
-                    count = sum(1 for d in folga_por_funcionario.values() if d == dia_tentativa)
-                    if count < 2 and dia_tentativa != dia_proibido:
-                        dia_escolhido = dia_tentativa
-                        break
-            
-            folga_por_funcionario[func_id] = dia_escolhido
+            dia = random.randint(0, 5)  # SEG a SAB
+            folga_por_funcionario[func_id] = dia
     
-    # Criar escala
-    for dia in range(7):
-        data = segunda + timedelta(days=dia)
-        
-        for func_id in func_ids:
-            if folga_por_funcionario[func_id] == dia:
-                continue
-            
-            horario = alocacao_fixa[func_id]
-            escala = Escala(
-                funcionario_id=func_id,
-                dia_semana=dia,
-                horario=horario,
-                data=data,
-                ativa=True
-            )
-            db.session.add(escala)
+    return folga_por_funcionario
+
+
+def _obter_segundas_do_mes(mes, ano):
+    """Retorna lista de segundas-feiras do mês"""
+    cal = calendar.Calendar()
+    segundas = []
     
-    db.session.commit()
-    return True
+    for semana in cal.monthdatescalendar(ano, mes):
+        segunda = semana[0]  # 0 = segunda-feira
+        if segunda.month == mes:
+            segundas.append(segunda)
+    
+    return segundas
