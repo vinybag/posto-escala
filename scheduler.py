@@ -21,76 +21,129 @@ def gerar_escala_semanal():
         dias_ate_segunda = 7
     segunda = hoje + timedelta(days=dias_ate_segunda)
     
-    # Buscar TODAS as escalas passadas para controle de domingo
-    todas_escalas = Escala.query.all()
+    # Buscar histórico para rodízio de domingo e turnos
+    todas_escalas = Escala.query.order_by(Escala.data.desc()).all()
     
-    # Descobrir quem já folgou domingo (em qualquer semana)
-    funcionarios_que_folgaram_domingo = set()
-    for escala in todas_escalas:
-        if escala.dia_semana == 6:  # 6 = domingo
-            # Se o funcionário NÃO trabalhou domingo = folgou
-            pass
+    # ============================================
+    # RODÍZIO DE DOMINGO (já existente)
+    # ============================================
     
-    # Pegar a última escala ativa anterior para descobrir as folgas
-    escalas_ultima_semana = Escala.query.filter(
-        Escala.data < segunda
-    ).order_by(Escala.data.desc()).all()
+    historico_domingo = set()
+    for func in funcionarios:
+        for e in todas_escalas:
+            if e.funcionario_id == func.id and e.dia_semana == 6:
+                historico_domingo.add(func.id)
+                break
     
-    # Mapear folgas da última semana
     ultima_semana_folgas = {}
-    if escalas_ultima_semana:
-        # Encontrar a segunda-feira mais recente
-        data_ref = escalas_ultima_semana[0].data
-        dias_ate_segunda_ref = data_ref.weekday()
-        inicio_ultima_semana = data_ref - timedelta(days=dias_ate_segunda_ref)
+    if todas_escalas:
+        data_ref = todas_escalas[0].data
+        inicio_ultima_semana = data_ref - timedelta(days=data_ref.weekday())
         fim_ultima_semana = inicio_ultima_semana + timedelta(days=6)
         
-        # Descobrir quem folgou cada dia
         for dia in range(7):
             data = inicio_ultima_semana + timedelta(days=dia)
             funcs_trabalharam = set()
-            for e in escalas_ultima_semana:
+            for e in todas_escalas:
                 if e.data == data:
                     funcs_trabalharam.add(e.funcionario_id)
-            
             for func in funcionarios:
                 if func.id not in funcs_trabalharam:
                     ultima_semana_folgas[func.id] = dia
     
-    # HISTÓRICO: Quem já folgou domingo (últimas 4 semanas)
-    # Buscar quem folgou domingo nas últimas 4 semanas
-    historico_domingo = set()
+    # ============================================
+    # RODÍZIO DE TURNO PARA MISTOS (NOVO!)
+    # ============================================
+    
+    # Verificar quantas semanas cada misto ficou em cada turno
+    historico_turnos = {}
     for func in funcionarios:
-        # Verificar se folgou domingo nas últimas semanas
-        for semana_atras in range(1, 5):
-            data_domingo = segunda - timedelta(days=semana_atras * 7 - (6 - segunda.weekday()))
-            if data_domingo < hoje:
-                trabalhou = any(
-                    e.funcionario_id == func.id and e.data == data_domingo and e.dia_semana == 6
-                    for e in todas_escalas
-                )
-                if not trabalhou and data_domingo >= (hoje - timedelta(days=28)):
-                    historico_domingo.add(func.id)
-                    break
+        if func.preferencia_turno == 'misto':
+            semanas_manha = 0
+            semanas_tarde = 0
+            semana_atual = None
+            turno_atual = None
+            
+            for e in todas_escalas:
+                if e.funcionario_id == func.id:
+                    num_semana = e.data.isocalendar()[1]  # Número da semana
+                    
+                    if semana_atual != num_semana:
+                        if turno_atual == 'manha':
+                            semanas_manha += 1
+                        elif turno_atual == 'tarde':
+                            semanas_tarde += 1
+                        semana_atual = num_semana
+                    
+                    if e.horario in HORARIOS_MANHA:
+                        turno_atual = 'manha'
+                    elif e.horario in HORARIOS_TARDE:
+                        turno_atual = 'tarde'
+            
+            # Último turno
+            if turno_atual == 'manha':
+                semanas_manha += 1
+            elif turno_atual == 'tarde':
+                semanas_tarde += 1
+            
+            historico_turnos[func.id] = {
+                'manha': semanas_manha,
+                'tarde': semanas_tarde,
+                'ultimo_turno': turno_atual
+            }
     
     # Separar funcionários por preferência
     somente_manha = [f for f in funcionarios if f.preferencia_turno == 'manha']
     somente_tarde = [f for f in funcionarios if f.preferencia_turno == 'tarde']
     misto = [f for f in funcionarios if f.preferencia_turno == 'misto']
     
-    # Distribuir mistos
-    metade = len(misto) // 2
-    mistos_manha = misto[:metade]
-    mistos_tarde = misto[metade:]
-    
-    turma_manha = somente_manha + mistos_manha
-    turma_tarde = somente_tarde + mistos_tarde
-    
-    if len(misto) % 2 != 0:
-        if len(turma_manha) <= len(turma_tarde):
-            turma_manha.append(misto[-1])
+    # Distribuir mistos com RODÍZIO
+    # Prioridade: quem está há mais tempo sem mudar de turno
+    misto_prioridade = []
+    for func in misto:
+        if func.id in historico_turnos:
+            hist = historico_turnos[func.id]
+            # Se ficou muito tempo no mesmo turno, prioridade para mudar
+            if hist['ultimo_turno'] == 'manha':
+                prioridade = hist['manha']  # Quanto maior, mais precisa ir pra tarde
+            elif hist['ultimo_turno'] == 'tarde':
+                prioridade = -hist['tarde']  # Quanto menor (negativo), mais precisa ir pra manhã
+            else:
+                prioridade = 0
         else:
-            turma_tarde.append(misto[-1])
+            prioridade = 0  # Novo funcionário, sem histórico
+        
+        misto_prioridade.append((func, prioridade))
+    
+    # Ordenar por prioridade (quem precisa mudar primeiro)
+    random.shuffle(misto_prioridade)
+    
+    # Distribuir entre manhã e tarde
+    turma_manha = list(somente_manha)
+    turma_tarde = list(somente_tarde)
+    
+    # Calcular quantos mistos vão para cada turno
+    # Tentar equilibrar os turnos
+    total_manha = len(somente_manha)
+    total_tarde = len(somente_tarde)
+    
+    for func, prioridade in misto_prioridade:
+        # Se já está equilibrado, sortear
+        if abs(total_manha - total_tarde) <= 1:
+            if random.random() < 0.5:
+                turma_manha.append(func)
+                total_manha += 1
+            else:
+                turma_tarde.append(func)
+                total_tarde += 1
+        # Se manhã tem menos, manda pra manhã
+        elif total_manha < total_tarde:
+            turma_manha.append(func)
+            total_manha += 1
+        # Se tarde tem menos, manda pra tarde
+        else:
+            turma_tarde.append(func)
+            total_tarde += 1
     
     random.shuffle(turma_manha)
     random.shuffle(turma_tarde)
@@ -107,57 +160,43 @@ def gerar_escala_semanal():
         alocacao_fixa[func.id] = horario
     
     # ============================================
-    # LÓGICA DAS FOLGAS COM RODÍZIO DE DOMINGO
+    # ATRIBUIR FOLGAS (com rodízio de domingo)
     # ============================================
     
     total_funcionarios = len(alocacao_fixa)
     func_ids = list(alocacao_fixa.keys())
     random.shuffle(func_ids)
     
-    # Definir 4 pessoas para folgar domingo
-    # PRIORIDADE: Quem NUNCA folgou domingo
-    # DEPOIS: Quem folgou há mais tempo
-    
+    # 4 para domingo
     candidatos_domingo = []
-    
     for func_id in func_ids:
         if func_id not in historico_domingo:
-            # Nunca folgou domingo = alta prioridade
             candidatos_domingo.append((func_id, 0))
         else:
-            # Já folgou = baixa prioridade
             candidatos_domingo.append((func_id, 1))
     
-    # Ordenar: quem nunca folgou primeiro
     candidatos_domingo.sort(key=lambda x: x[1])
-    
-    # Pegar os 4 primeiros para folgar domingo
     folgados_domingo = [c[0] for c in candidatos_domingo[:4]]
     
-    # Se todo mundo já folgou domingo, pegar os 4 primeiros da lista
     if len(folgados_domingo) < 4:
         folgados_domingo = func_ids[:4]
     
-    # Atribuir folgas para os outros dias (exceto domingo para os 4)
     folga_por_funcionario = {}
     
     for func_id in func_ids:
         if func_id in folgados_domingo:
-            folga_por_funcionario[func_id] = 6  # Domingo
+            folga_por_funcionario[func_id] = 6
         else:
-            # Escolher um dia que NÃO seja o mesmo da semana passada
             dia_proibido = ultima_semana_folgas.get(func_id, -1)
-            dias_disponiveis = [d for d in range(6) if d != dia_proibido]  # 0-5 = SEG a SAB
+            dias_disponiveis = [d for d in range(6) if d != dia_proibido]
             
             if not dias_disponiveis:
                 dias_disponiveis = list(range(6))
             
             dia_escolhido = random.choice(dias_disponiveis)
             
-            # Garantir distribuição uniforme (máximo 2 folgas por dia SEG-SAB)
             count_dia = sum(1 for d in folga_por_funcionario.values() if d == dia_escolhido)
             if count_dia >= 2:
-                # Tentar outro dia
                 for dia_tentativa in range(6):
                     count = sum(1 for d in folga_por_funcionario.values() if d == dia_tentativa)
                     if count < 2 and dia_tentativa != dia_proibido:
@@ -166,13 +205,13 @@ def gerar_escala_semanal():
             
             folga_por_funcionario[func_id] = dia_escolhido
     
-    # Criar escala para cada dia
+    # Criar escala
     for dia in range(7):
         data = segunda + timedelta(days=dia)
         
         for func_id in func_ids:
             if folga_por_funcionario[func_id] == dia:
-                continue  # Folga neste dia
+                continue
             
             horario = alocacao_fixa[func_id]
             escala = Escala(

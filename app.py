@@ -118,17 +118,29 @@ def trocar_escala(func1_id, func2_id, dia):
     escalas_func1 = Escala.query.filter_by(funcionario_id=func1_id, ativa=True).all()
     escalas_func2 = Escala.query.filter_by(funcionario_id=func2_id, ativa=True).all()
     
-    # Trocar funcionario_id em todas as escalas
-    for escala in escalas_func1:
-        escala.funcionario_id = func2_id
-    
-    for escala in escalas_func2:
-        escala.funcionario_id = func1_id
-    
-    db.session.commit()
-    
-    func1 = Funcionario.query.get(func1_id)
-    func2 = Funcionario.query.get(func2_id)
-    flash(f'Troca realizada: {func1.nome} ⇄ {func2.nome}', 'success')
+    if dia == -1:
+        # Troca completa entre os dois funcionários
+        for escala in escalas_func1:
+            escala.funcionario_id = func2_id
+        
+        for escala in escalas_func2:
+            escala.funcionario_id = func1_id
+        
+        db.session.commit()
+        
+        func1 = Funcionario.query.get(func1_id)
+        func2 = Funcionario.query.get(func2_id)
+        flash(f'Troca completa: {func1.nome} ⇄ {func2.nome}', 'success')
+    else:
+        # Troca apenas em um dia específico
+        escala_func1 = Escala.query.filter_by(funcionario_id=func1_id, dia_semana=dia, ativa=True).first()
+        escala_func2 = Escala.query.filter_by(funcionario_id=func2_id, dia_semana=dia, ativa=True).first()
+        
+        if escala_func1 and escala_func2:
+            horario_temp = escala_func1.horario
+            escala_func1.horario = escala_func2.horario
+            escala_func2.horario = horario_temp
+            db.session.commit()
+            flash(f'Troca realizada no dia {dia}!', 'success')
     
     return redirect(url_for('ver_escala'))
