@@ -207,3 +207,74 @@ def _obter_segundas_do_mes(mes, ano):
             segundas.append(segunda)
     
     return segundas
+
+def gerar_escala_semanal():
+    """
+    Gera escala para a próxima semana (mantido para compatibilidade)
+    """
+    funcionarios = Funcionario.query.filter_by(ativo=True).all()
+    
+    if not funcionarios:
+        return False
+    
+    hoje = datetime.now().date()
+    dias_ate_segunda = (7 - hoje.weekday()) % 7
+    if dias_ate_segunda == 0:
+        dias_ate_segunda = 7
+    segunda = hoje + timedelta(days=dias_ate_segunda)
+    
+    # Usar o mês atual
+    mes = segunda.month
+    ano = segunda.year
+    
+    # Criar registro do mês se não existir
+    mes_escala = MesEscala.query.filter_by(mes=mes, ano=ano).first()
+    if not mes_escala:
+        mes_escala = MesEscala(mes=mes, ano=ano, ativo=True)
+        db.session.add(mes_escala)
+        db.session.flush()
+    
+    # Buscar histórico
+    historico = _carregar_historico(funcionarios, mes, ano)
+    
+    # Separar funcionários
+    somente_manha = [f for f in funcionarios if f.preferencia_turno == 'manha']
+    somente_tarde = [f for f in funcionarios if f.preferencia_turno == 'tarde']
+    misto = [f for f in funcionarios if f.preferencia_turno == 'misto']
+    
+    turma_manha, turma_tarde = _distribuir_turnos(somente_manha, somente_tarde, misto, historico)
+    
+    alocacao_fixa = {}
+    
+    for i, func in enumerate(turma_manha):
+        horario = HORARIOS_MANHA[i % len(HORARIOS_MANHA)]
+        alocacao_fixa[func.id] = horario
+    
+    for i, func in enumerate(turma_tarde):
+        horario = HORARIOS_TARDE[i % len(HORARIOS_TARDE)]
+        alocacao_fixa[func.id] = horario
+    
+    # Atribuir folgas
+    folga_por_funcionario = _atribuir_folgas_semana(alocacao_fixa, historico, 0)
+    
+    # Criar escala para cada dia
+    for dia in range(7):
+        data = segunda + timedelta(days=dia)
+        
+        for func_id in alocacao_fixa:
+            if folga_por_funcionario.get(func_id) == dia:
+                continue
+            
+            horario = alocacao_fixa[func_id]
+            escala = Escala(
+                funcionario_id=func_id,
+                mes_escala_id=mes_escala.id,
+                dia_semana=dia,
+                horario=horario,
+                data=data,
+                ativa=True
+            )
+            db.session.add(escala)
+    
+    db.session.commit()
+    return True
