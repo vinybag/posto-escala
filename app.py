@@ -111,9 +111,13 @@ def ver_escala():
     todos_funcionarios = Funcionario.query.filter_by(ativo=True).all()
     return render_template('escala.html', escala=escala, todos_funcionarios=todos_funcionarios)
 
-@app.route('/trocar-escala/<int:func1_id>/<int:func2_id>/<int:dia>')
+@app.route('/trocar-escala')
 @login_required
-def trocar_escala(func1_id, func2_id, dia):
+def trocar_escala():
+    func1_id = request.args.get('func1', type=int)
+    func2_id = request.args.get('func2', type=int)
+    dia = request.args.get('dia', -1, type=int)
+    
     # Buscar todas as escalas ativas dos dois funcionários
     escalas_func1 = Escala.query.filter_by(funcionario_id=func1_id, ativa=True).all()
     escalas_func2 = Escala.query.filter_by(funcionario_id=func2_id, ativa=True).all()
@@ -141,6 +145,6 @@ def trocar_escala(func1_id, func2_id, dia):
             escala_func1.horario = escala_func2.horario
             escala_func2.horario = horario_temp
             db.session.commit()
-            flash(f'Troca realizada no dia {dia}!', 'success')
+            flash(f'Troca realizada no dia!', 'success')
     
     return redirect(url_for('ver_escala'))
