@@ -23,12 +23,24 @@ class Funcionario(db.Model):
     
     escalas = db.relationship('Escala', backref='funcionario', lazy=True)
 
+class MesEscala(db.Model):
+    __tablename__ = 'meses_escala'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    mes = db.Column(db.Integer, nullable=False)  # 1 a 12
+    ano = db.Column(db.Integer, nullable=False)
+    data_criacao = db.Column(db.DateTime, default=datetime.utcnow)
+    ativo = db.Column(db.Boolean, default=True)
+    
+    escalas = db.relationship('Escala', backref='mes_escala', lazy=True)
+
 class Escala(db.Model):
     __tablename__ = 'escalas'
     
     id = db.Column(db.Integer, primary_key=True)
     funcionario_id = db.Column(db.Integer, db.ForeignKey('funcionarios.id'), nullable=False)
+    mes_escala_id = db.Column(db.Integer, db.ForeignKey('meses_escala.id'), nullable=True)
     dia_semana = db.Column(db.Integer)  # 0=segunda, 6=domingo
-    horario = db.Column(db.String(20))  # "6-13", "6-14", etc
+    horario = db.Column(db.String(20))
     data = db.Column(db.Date)
     ativa = db.Column(db.Boolean, default=True)
