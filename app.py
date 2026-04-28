@@ -4,6 +4,7 @@ from flask_login import LoginManager, login_user, logout_user, login_required, c
 from models import db, Usuario, Funcionario, Escala, MesEscala
 from auth import auth_bp
 from datetime import datetime, timedelta
+from sqlalchemy import inspect, text
 import random
 
 app = Flask(__name__)
@@ -36,11 +37,23 @@ def load_user(user_id):
 with app.app_context():
     try:
         db.create_all()
+        
+        # Verificar se a coluna mes_escala_id existe na tabela escalas
+        inspector = inspect(db.engine)
+        colunas = [c['name'] for c in inspector.get_columns('escalas')]
+        
+        if 'mes_escala_id' not in colunas:
+            with db.engine.connect() as conn:
+                conn.execute(text('ALTER TABLE escalas ADD COLUMN mes_escala_id INTEGER REFERENCES meses_escala(id)'))
+                conn.commit()
+            print("Coluna mes_escala_id adicionada com sucesso!")
+        
         # Criar admin padrão se não existir
         if not Usuario.query.filter_by(username='admin').first():
             admin = Usuario(username='admin', password='admin123', is_admin=True)
             db.session.add(admin)
             db.session.commit()
+            print("Admin padrão criado!")
     except Exception as e:
         print(f"Erro ao criar banco: {e}")
 
@@ -98,7 +111,7 @@ def gerar_escala():
     resultado = gerar_escala_semanal()
     
     if resultado:
-        flash('Nova escala gerada com sucesso!', 'success')
+        flash('Nova escala semanal gerada com sucesso!', 'success')
     else:
         flash('Erro: Não há funcionários cadastrados!', 'error')
     
