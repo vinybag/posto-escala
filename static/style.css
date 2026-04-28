@@ -111,20 +111,35 @@ body {
     }
 }
 
-/* Dropdown na escala */
-.status-cell .dropdown-toggle {
-    padding: 4px 8px;
-    font-size: 0.75rem;
+/* Dropdown no nome do funcionário */
+.funcionario-dropdown {
+    text-decoration: none !important;
+    color: #212529 !important;
+    padding: 0;
+    font-size: 0.9rem;
+}
+
+.funcionario-dropdown:hover {
+    color: #007bff !important;
+}
+
+.funcionario-dropdown::after {
+    font-size: 0.6rem;
+    margin-left: 4px;
 }
 
 .dropdown-menu {
     max-height: 300px;
     overflow-y: auto;
+    border: 1px solid #dee2e6;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
 }
 
 .dropdown-item {
     font-size: 0.85rem;
-    padding: 4px 12px;
+    padding: 6px 16px;
+    cursor: pointer;
+    transition: background-color 0.2s;
 }
 
 .dropdown-item:hover {
@@ -135,5 +150,8 @@ body {
 .dropdown-header {
     font-size: 0.8rem;
     font-weight: bold;
-    color: #495057;
+    color: #6c757d;
+    padding: 8px 16px;
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #dee2e6;
 }
