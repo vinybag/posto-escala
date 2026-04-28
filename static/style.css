@@ -110,3 +110,30 @@ body {
         padding: 3px 5px;
     }
 }
+
+/* Dropdown na escala */
+.status-cell .dropdown-toggle {
+    padding: 4px 8px;
+    font-size: 0.75rem;
+}
+
+.dropdown-menu {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.dropdown-item {
+    font-size: 0.85rem;
+    padding: 4px 12px;
+}
+
+.dropdown-item:hover {
+    background-color: #007bff;
+    color: white;
+}
+
+.dropdown-header {
+    font-size: 0.8rem;
+    font-weight: bold;
+    color: #495057;
+}

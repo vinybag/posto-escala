@@ -112,3 +112,52 @@ def ver_escala():
 
 if __name__ == '__main__':
     app.run(debug=True)
+
+@app.route('/trocar-escala/<int:func1_id>/<int:func2_id>/<int:dia>')
+@login_required
+def trocar_escala(func1_id, func2_id, dia):
+    # Buscar as escalas ativas dos dois funcionários no dia específico
+    escala_func1 = Escala.query.filter_by(
+        funcionario_id=func1_id,
+        dia_semana=dia,
+        ativa=True
+    ).first()
+    
+    escala_func2 = Escala.query.filter_by(
+        funcionario_id=func2_id,
+        dia_semana=dia,
+        ativa=True
+    ).first()
+    
+    if escala_func1 and escala_func2:
+        # Trocar os horários
+        horario_temp = escala_func1.horario
+        escala_func1.horario = escala_func2.horario
+        escala_func2.horario = horario_temp
+        db.session.commit()
+        flash('Troca realizada com sucesso!', 'success')
+    elif escala_func1 and not escala_func2:
+        # Func1 trabalha, Func2 folga -> Func1 folga, Func2 trabalha
+        funcionario = Funcionario.query.get(func2_id)
+        # Descobrir qual horário o func2 deveria ter
+        # Buscar outros dias do func2 para saber o horário dele
+        outra_escala = Escala.query.filter_by(
+            funcionario_id=func2_id,
+            ativa=True
+        ).first()
+        
+        if outra_escala:
+            # Criar escala para func2 no lugar do func1
+            nova_escala = Escala(
+                funcionario_id=func2_id,
+                dia_semana=dia,
+                horario=escala_func1.horario,
+                data=escala_func1.data,
+                ativa=True
+            )
+            db.session.add(nova_escala)
+            db.session.delete(escala_func1)
+            db.session.commit()
+            flash('Troca com folga realizada!', 'success')
+    
+    return redirect(url_for('ver_escala'))    
