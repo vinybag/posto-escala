@@ -107,9 +107,53 @@ def gerar_escala():
 @app.route('/escala')
 @login_required
 def ver_escala():
-    escala = Escala.query.filter_by(ativa=True).order_by(Escala.horario, Escala.funcionario_id, Escala.dia_semana).all()
+    # Verificar se existe escala mensal
+    ultimo_mes = MesEscala.query.order_by(MesEscala.id.desc()).first()
+    
+    if ultimo_mes:
+        return redirect(url_for('ver_escala_mensal', mes_id=ultimo_mes.id))
+    else:
+        # Fallback: mostrar escala semanal
+        escala = Escala.query.filter_by(ativa=True).order_by(Escala.horario, Escala.funcionario_id, Escala.dia_semana).all()
+        todos_funcionarios = Funcionario.query.filter_by(ativo=True).all()
+        return render_template('escala.html', escala=escala, todos_funcionarios=todos_funcionarios)
+
+@app.route('/gerar-escala-mensal', methods=['GET', 'POST'])
+@login_required
+def gerar_escala_mensal():
+    from scheduler import gerar_escala_mensal as gerar_mensal
+    
+    if request.method == 'POST':
+        mes = int(request.form.get('mes'))
+        ano = int(request.form.get('ano'))
+        resultado = gerar_mensal(mes=mes, ano=ano)
+        
+        if resultado:
+            flash(f'Escala de {mes:02d}/{ano} gerada com sucesso!', 'success')
+            return redirect(url_for('ver_escala_mensal', mes_id=resultado))
+        else:
+            flash('Erro ao gerar escala!', 'error')
+            return redirect(url_for('gerar_escala_mensal'))
+    
+    # GET: mostrar formulário
+    meses_disponiveis = _obter_meses_disponiveis()
+    return render_template('gerar_mensal.html', meses=meses_disponiveis)
+
+@app.route('/escala-mensal/<int:mes_id>')
+@login_required
+def ver_escala_mensal(mes_id):
+    mes_escala = MesEscala.query.get_or_404(mes_id)
+    escala = Escala.query.filter_by(mes_escala_id=mes_id, ativa=True)\
+        .order_by(Escala.data, Escala.horario, Escala.funcionario_id).all()
+    
     todos_funcionarios = Funcionario.query.filter_by(ativo=True).all()
-    return render_template('escala.html', escala=escala, todos_funcionarios=todos_funcionarios)
+    meses_disponiveis = MesEscala.query.order_by(MesEscala.ano.desc(), MesEscala.mes.desc()).all()
+    
+    return render_template('escala_mensal.html', 
+                         escala=escala, 
+                         mes_escala=mes_escala,
+                         todos_funcionarios=todos_funcionarios,
+                         meses_disponiveis=meses_disponiveis)
 
 @app.route('/trocar-escala')
 @login_required
@@ -149,62 +193,15 @@ def trocar_escala():
     
     return redirect(url_for('ver_escala'))
 
-@app.route('/gerar-escala-mensal', methods=['GET', 'POST'])
-@login_required
-def gerar_escala_mensal():
-    from scheduler import gerar_escala_mensal as gerar_mensal
-    
-    if request.method == 'POST':
-        mes = int(request.form.get('mes'))
-        ano = int(request.form.get('ano'))
-        resultado = gerar_mensal(mes=mes, ano=ano)
-        
-        if resultado:
-            flash(f'Escala de {mes:02d}/{ano} gerada com sucesso!', 'success')
-        else:
-            flash('Erro ao gerar escala!', 'error')
-        
-        return redirect(url_for('ver_escala_mensal', mes_id=resultado))
-    
-    # GET: mostrar formulário
-    meses_disponiveis = _obter_meses_disponiveis()
-    return render_template('gerar_mensal.html', meses=meses_disponiveis)
-
-
-@app.route('/escala-mensal/<int:mes_id>')
-@login_required
-def ver_escala_mensal(mes_id):
-    mes_escala = MesEscala.query.get_or_404(mes_id)
-    escala = Escala.query.filter_by(mes_escala_id=mes_id, ativa=True)\
-        .order_by(Escala.data, Escala.horario, Escala.funcionario_id).all()
-    
-    todos_funcionarios = Funcionario.query.filter_by(ativo=True).all()
-    meses_disponiveis = MesEscala.query.order_by(MesEscala.ano.desc(), MesEscala.mes.desc()).all()
-    
-    return render_template('escala_mensal.html', 
-                         escala=escala, 
-                         mes_escala=mes_escala,
-                         todos_funcionarios=todos_funcionarios,
-                         meses_disponiveis=meses_disponiveis)
-
-
-@app.route('/escala')
-@login_required
-def ver_escala():
-    # Redirecionar para o mês mais recente
-    ultimo_mes = MesEscala.query.order_by(MesEscala.id.desc()).first()
-    if ultimo_mes:
-        return redirect(url_for('ver_escala_mensal', mes_id=ultimo_mes.id))
-    else:
-        flash('Nenhuma escala gerada ainda. Gere uma escala mensal primeiro!', 'warning')
-        return redirect(url_for('gerar_escala_mensal'))
-
+# ============================================
+# FUNÇÕES AUXILIARES
+# ============================================
 
 def _obter_meses_disponiveis():
     """Retorna lista de meses para o dropdown"""
     hoje = datetime.now()
     meses = []
-    for i in range(12):  # Próximos 12 meses
+    for i in range(12):
         if hoje.month + i > 12:
             mes = hoje.month + i - 12
             ano = hoje.year + 1
@@ -213,3 +210,6 @@ def _obter_meses_disponiveis():
             ano = hoje.year
         meses.append((mes, ano))
     return meses
+
+if __name__ == '__main__':
+    app.run(debug=True)
