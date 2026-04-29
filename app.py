@@ -168,11 +168,81 @@ def ver_escala_mensal(mes_id):
     todos_funcionarios = Funcionario.query.filter_by(ativo=True).all()
     meses_disponiveis = MesEscala.query.order_by(MesEscala.ano.desc(), MesEscala.mes.desc()).all()
     
+    # Agrupar escalas por data
+    from collections import defaultdict
+    
+    # Pegar todas as datas unicas da escala
+    datas_escala = sorted(set(e.data for e in escala))
+    
+    if not datas_escala:
+        flash('Nenhum dado encontrado para este mes!', 'warning')
+        return redirect(url_for('listar_escalas'))
+    
+    # Agrupar por semana (segunda a domingo)
+    semanas = []
+    semana_atual = []
+    
+    for data in datas_escala:
+        # Se for segunda-feira (0) e ja tem dias na semana, comeca nova semana
+        if data.weekday() == 0 and semana_atual:
+            semanas.append(semana_atual)
+            semana_atual = []
+        
+        # Filtrar escalas deste dia
+        escalas_do_dia = [e for e in escala if e.data == data]
+        
+        # Agrupar funcionarios por horario
+        funcionarios_por_horario = defaultdict(list)
+        for e in escalas_do_dia:
+            if e.funcionario not in funcionarios_por_horario[e.horario]:
+                funcionarios_por_horario[e.horario].append(e.funcionario)
+        
+        semana_atual.append({
+            'data': data,
+            'dia_semana': data.weekday(),
+            'escalas': escalas_do_dia,
+            'funcionarios_por_horario': dict(funcionarios_por_horario)
+        })
+    
+    # Adicionar ultima semana
+    if semana_atual:
+        semanas.append(semana_atual)
+    
+    # Montar estrutura para o template
+    semanas_dados = []
+    for num, semana in enumerate(semanas):
+        dias = []
+        escalas_por_dia = {}
+        
+        # Mapear todas as escalas da semana por (func_id, dia_semana)
+        for dia_info in semana:
+            for e in dia_info['escalas']:
+                escalas_por_dia[(e.funcionario_id, e.dia_semana)] = e
+        
+        dias = [{'data': d['data'], 'dia_semana': d['dia_semana']} for d in semana]
+        
+        # Agrupar funcionarios por horario para a semana inteira
+        funcionarios_por_horario = defaultdict(list)
+        for dia_info in semana:
+            for horario, funcs in dia_info['funcionarios_por_horario'].items():
+                for f in funcs:
+                    if f not in funcionarios_por_horario[horario]:
+                        funcionarios_por_horario[horario].append(f)
+        
+        semanas_dados.append({
+            'data_inicio': dias[0]['data'],
+            'data_fim': dias[-1]['data'],
+            'dias': dias,
+            'escalas_por_dia': escalas_por_dia,
+            'funcionarios_por_horario': dict(funcionarios_por_horario)
+        })
+    
     return render_template('escala_mensal.html', 
                          escala=escala, 
                          mes_escala=mes_escala,
                          todos_funcionarios=todos_funcionarios,
-                         meses_disponiveis=meses_disponiveis)
+                         meses_disponiveis=meses_disponiveis,
+                         semanas_dados=semanas_dados)
 
 @app.route('/trocar-escala')
 @login_required

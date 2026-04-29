@@ -5,10 +5,9 @@
                       'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'][mes_escala.mes-1] }} 
         / {{ mes_escala.ano }}</h2>
     <div>
-        <!-- Dropdown de meses -->
         <div class="btn-group me-2">
             <button type="button" class="btn btn-info dropdown-toggle" data-bs-toggle="dropdown">
-                Selecionar Mês
+                Selecionar Mes
             </button>
             <ul class="dropdown-menu">
                 {% for m in meses_disponiveis %}
@@ -24,34 +23,21 @@
         </div>
         
         <a href="{{ url_for('gerar_escala_mensal') }}" class="btn btn-success me-2">+ Nova Escala</a>
-        <a href="{{ url_for('excluir_escala_mensal', mes_id=mes_escala.id) }}"
+        <a href="{{ url_for('excluir_escala_mensal', mes_id=mes_escala.id) }}" 
            class="btn btn-danger me-2"
-           onclick="return confirm('Tem certeza que deseja excluir TODA a escala?')">
+           onclick="return confirm('Excluir escala?')">
             Excluir
         </a>
         <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">Voltar</a>
     </div>
 </div>
 
-<!-- Agrupar por semana -->
-{% set escalas_por_semana = {} %}
-{% for item in escala %}
-    {% set semana = item.data.isocalendar()[1] %}
-    {% if semana not in escalas_por_semana %}
-        {% set _ = escalas_por_semana.update({semana: []}) %}
-    {% endif %}
-    {% set _ = escalas_por_semana[semana].append(item) %}
-{% endfor %}
-
-{% for semana, itens in escalas_por_semana.items() %}
+{% for semana in semanas_dados %}
 <div class="card mb-4">
     <div class="card-header bg-secondary text-white">
         <h5 class="mb-0">
             Semana {{ loop.index }}
-            {% if itens %}
-                ({{ itens[0].data.strftime('%d/%m') }} a 
-                 {{ itens[-1].data.strftime('%d/%m') if itens[-1].data != itens[0].data else itens[0].data.strftime('%d/%m') }})
-            {% endif %}
+            ({{ semana.data_inicio.strftime('%d/%m') }} a {{ semana.data_fim.strftime('%d/%m') }})
         </h5>
     </div>
     <div class="card-body p-0">
@@ -59,52 +45,36 @@
             <table class="table table-bordered escala-table mb-0">
                 <thead class="table-dark">
                     <tr>
-                        <th>Horário</th>
-                        <th>Funcionário</th>
-                        <th>SEG</th>
-                        <th>TER</th>
-                        <th>QUA</th>
-                        <th>QUI</th>
-                        <th>SEX</th>
-                        <th>SAB</th>
-                        <th>DOM</th>
+                        <th>Horario</th>
+                        <th>Funcionario</th>
+                        {% for dia_info in semana.dias %}
+                        <th>
+                            {{ ['SEG', 'TER', 'QUA', 'QUI', 'SEX', 'SAB', 'DOM'][dia_info.dia_semana] }}
+                        </th>
+                        {% endfor %}
                     </tr>
                     <tr class="datas-header">
                         <th></th>
                         <th></th>
-                        {% for dia in range(7) %}
-                            <th>
-                                {% set data_encontrada = namespace(valor=None) %}
-                                {% for item in itens %}
-                                    {% if item.dia_semana == dia %}
-                                        {% set data_encontrada.valor = item.data %}
-                                    {% endif %}
-                                {% endfor %}
-                                {{ data_encontrada.valor.strftime('%d/%m') if data_encontrada.valor else '-' }}
-                            </th>
+                        {% for dia_info in semana.dias %}
+                        <th>{{ dia_info.data.strftime('%d/%m') }}</th>
                         {% endfor %}
                     </tr>
                 </thead>
                 <tbody>
-                    <!-- MANHÃ -->
+                    <!-- MANHA -->
                     <tr class="turno-header">
-                        <td colspan="9"><strong>Turno da Manhã</strong></td>
+                        <td colspan="{{ semana.dias|length + 2 }}"><strong>Turno da Manha</strong></td>
                     </tr>
                     
                     {% for horario in ['6-13', '6-14', '7-15'] %}
-                        {% set funcs = [] %}
-                        {% for item in itens if item.horario == horario %}
-                            {% if item.funcionario not in funcs %}
-                                {% set _ = funcs.append(item.funcionario) %}
-                            {% endif %}
-                        {% endfor %}
+                        {% set funcs = semana.funcionarios_por_horario.get(horario, []) %}
                         {% for func in funcs %}
                         <tr>
                             {% if loop.first %}
-                            <td rowspan="{{ funcs|length }}" class="horario-cell"><strong>{{ horario.replace('-', ' às ') }}</strong></td>
+                            <td rowspan="{{ funcs|length }}" class="horario-cell"><strong>{{ horario.replace('-', ' as ') }}</strong></td>
                             {% endif %}
                             
-                            <!-- DROPDOWN NO NOME DO FUNCIONÁRIO -->
                             <td class="funcionario-cell">
                                 <div class="dropdown">
                                     <button class="btn btn-link dropdown-toggle funcionario-dropdown" type="button" data-bs-toggle="dropdown">
@@ -116,7 +86,7 @@
                                             {% if outro_func.id != func.id %}
                                             <li>
                                                 <a class="dropdown-item" href="{{ url_for('trocar_escala', func1=func.id, func2=outro_func.id, dia=-1) }}">
-                                                    ➜ {{ outro_func.nome }}
+                                                    {{ outro_func.nome }}
                                                 </a>
                                             </li>
                                             {% endif %}
@@ -125,11 +95,11 @@
                                 </div>
                             </td>
                             
-                            {% for dia in range(7) %}
-                                {% set reg = itens | selectattr('funcionario_id', 'equalto', func.id) | selectattr('dia_semana', 'equalto', dia) | list %}
+                            {% for dia_info in semana.dias %}
+                                {% set reg = semana.escalas_por_dia.get((func.id, dia_info.dia_semana)) %}
                                 <td class="text-center">
                                     {% if reg %}
-                                        <span class="badge bg-success">{{ reg[0].horario.replace('-', ' às ') }}</span>
+                                        <span class="badge bg-success">{{ reg.horario.replace('-', ' as ') }}</span>
                                     {% else %}
                                         <span class="badge bg-warning text-dark">FOLGA</span>
                                     {% endif %}
@@ -141,23 +111,17 @@
                     
                     <!-- TARDE -->
                     <tr class="turno-header">
-                        <td colspan="9"><strong>Turno da Tarde</strong></td>
+                        <td colspan="{{ semana.dias|length + 2 }}"><strong>Turno da Tarde</strong></td>
                     </tr>
                     
                     {% for horario in ['13-21', '14-22', '15-22'] %}
-                        {% set funcs = [] %}
-                        {% for item in itens if item.horario == horario %}
-                            {% if item.funcionario not in funcs %}
-                                {% set _ = funcs.append(item.funcionario) %}
-                            {% endif %}
-                        {% endfor %}
+                        {% set funcs = semana.funcionarios_por_horario.get(horario, []) %}
                         {% for func in funcs %}
                         <tr>
                             {% if loop.first %}
-                            <td rowspan="{{ funcs|length }}" class="horario-cell"><strong>{{ horario.replace('-', ' às ') }}</strong></td>
+                            <td rowspan="{{ funcs|length }}" class="horario-cell"><strong>{{ horario.replace('-', ' as ') }}</strong></td>
                             {% endif %}
                             
-                            <!-- DROPDOWN NO NOME DO FUNCIONÁRIO -->
                             <td class="funcionario-cell">
                                 <div class="dropdown">
                                     <button class="btn btn-link dropdown-toggle funcionario-dropdown" type="button" data-bs-toggle="dropdown">
@@ -169,7 +133,7 @@
                                             {% if outro_func.id != func.id %}
                                             <li>
                                                 <a class="dropdown-item" href="{{ url_for('trocar_escala', func1=func.id, func2=outro_func.id, dia=-1) }}">
-                                                    ➜ {{ outro_func.nome }}
+                                                    {{ outro_func.nome }}
                                                 </a>
                                             </li>
                                             {% endif %}
@@ -178,11 +142,11 @@
                                 </div>
                             </td>
                             
-                            {% for dia in range(7) %}
-                                {% set reg = itens | selectattr('funcionario_id', 'equalto', func.id) | selectattr('dia_semana', 'equalto', dia) | list %}
+                            {% for dia_info in semana.dias %}
+                                {% set reg = semana.escalas_por_dia.get((func.id, dia_info.dia_semana)) %}
                                 <td class="text-center">
                                     {% if reg %}
-                                        <span class="badge bg-success">{{ reg[0].horario.replace('-', ' às ') }}</span>
+                                        <span class="badge bg-success">{{ reg.horario.replace('-', ' as ') }}</span>
                                     {% else %}
                                         <span class="badge bg-warning text-dark">FOLGA</span>
                                     {% endif %}
