@@ -209,7 +209,7 @@ def _distribuir_turnos(somente_manha, somente_tarde, misto, historico):
 
 
 def _atribuir_folgas_semana(alocacao_fixa, historico, num_semana):
-    """Atribui folgas para uma semana - 4 no DOM, 1 por dia SEG-SAB, resto distribuido"""
+    """Atribui folgas para uma semana - 4 DOM, resto aleatorio SEG-SAB"""
     func_ids = list(alocacao_fixa.keys())
     random.shuffle(func_ids)
     
@@ -229,22 +229,20 @@ def _atribuir_folgas_semana(alocacao_fixa, historico, num_semana):
     folgam_outros = [f for f in func_ids if f not in folgados_domingo]
     random.shuffle(folgam_outros)
     
-    dias_semana = 6
     folgas_por_dia = {0: [], 1: [], 2: [], 3: [], 4: [], 5: []}
     
+    # Garantir 1 por dia
     idx = 0
-    for dia in range(dias_semana):
+    for dia in range(6):
         if idx < len(folgam_outros):
             folgas_por_dia[dia].append(folgam_outros[idx])
             idx += 1
     
+    # Restante aleatorio
     while idx < len(folgam_outros):
-        dias_ordenados = sorted(range(dias_semana), key=lambda d: len(folgas_por_dia[d]))
-        for dia in dias_ordenados:
-            if idx >= len(folgam_outros):
-                break
-            folgas_por_dia[dia].append(folgam_outros[idx])
-            idx += 1
+        dia_escolhido = random.randint(0, 5)
+        folgas_por_dia[dia_escolhido].append(folgam_outros[idx])
+        idx += 1
     
     folga_por_funcionario = {}
     
@@ -263,17 +261,16 @@ def _atribuir_folgas_semana(alocacao_fixa, historico, num_semana):
 def _atribuir_folgas_semana_mensal(alocacao_fixa, historico, domingo_no_mes):
     """
     Atribui folgas para uma semana com controle mensal de domingo.
-    Domingo: 4 folgas.
-    SEG a SAB: 1 folga garantida por dia, o restante distribuido igualmente.
+    Domingo: 4 folgas fixas.
+    SEG a SAB: pelo menos 1 folga por dia, restante distribuido aleatoriamente.
     """
     func_ids = list(alocacao_fixa.keys())
     random.shuffle(func_ids)
     
     total_func = len(func_ids)
-    
-    # 4 para domingo (ou menos se tiver poucos funcionarios)
     num_domingo = min(4, total_func)
     
+    # 4 para domingo (prioridade: quem nunca folgou)
     nunca_folgou_domingo = [f for f in func_ids if f not in domingo_no_mes]
     ja_folgou_domingo = [f for f in func_ids if f in domingo_no_mes]
     
@@ -287,28 +284,24 @@ def _atribuir_folgas_semana_mensal(alocacao_fixa, historico, domingo_no_mes):
     folgam_outros = [f for f in func_ids if f not in folgados_domingo]
     random.shuffle(folgam_outros)
     
-    # Numero de dias para distribuir (sempre 6: SEG a SAB)
-    dias_semana = 6
-    
-    # Cada dia recebe pelo menos 1 folga
+    # Distribuir aleatoriamente, mas garantindo pelo menos 1 por dia
     folgas_por_dia = {0: [], 1: [], 2: [], 3: [], 4: [], 5: []}
     
-    # Primeira rodada: garantir 1 folga por dia
+    # Primeiro: garantir 1 folga em cada dia (SEG a SAB)
+    dias_disponiveis = list(range(6))
+    random.shuffle(dias_disponiveis)
+    
     idx = 0
-    for dia in range(dias_semana):
+    for dia in dias_disponiveis:
         if idx < len(folgam_outros):
             folgas_por_dia[dia].append(folgam_outros[idx])
             idx += 1
     
-    # Segunda rodada: distribuir o restante igualmente
+    # Depois: distribuir o restante de forma ALEATORIA
     while idx < len(folgam_outros):
-        # Ordenar dias por quantidade (quem tem menos recebe primeiro)
-        dias_ordenados = sorted(range(dias_semana), key=lambda d: len(folgas_por_dia[d]))
-        for dia in dias_ordenados:
-            if idx >= len(folgam_outros):
-                break
-            folgas_por_dia[dia].append(folgam_outros[idx])
-            idx += 1
+        dia_escolhido = random.randint(0, 5)  # SEG a SAB aleatorio
+        folgas_por_dia[dia_escolhido].append(folgam_outros[idx])
+        idx += 1
     
     # Montar resultado
     folga_por_funcionario = {}
