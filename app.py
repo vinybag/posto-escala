@@ -209,11 +209,12 @@ def listar_escalas():
     # Contar registros da escala semanal
     escala_semanal_count = Escala.query.filter_by(ativa=True, mes_escala_id=None).count()
     
-    # Contar semanas por mês
+    # Contar semanas por mês (número de datas únicas ÷ 7)
+    from sqlalchemy import func
     escalas_mensais_semanas = {}
     for mes in escalas_mensais:
-        count = Escala.query.filter_by(mes_escala_id=mes.id).count()
-        escalas_mensais_semanas[mes.id] = count // 7 if count > 0 else 0
+        datas_unicas = db.session.query(Escala.data).filter_by(mes_escala_id=mes.id).distinct().count()
+        escalas_mensais_semanas[mes.id] = max(1, datas_unicas // 7)
     
     return render_template('listar_escalas.html', 
                          escalas_mensais=escalas_mensais,
