@@ -1,9 +1,18 @@
+/* ========================================== */
+/* ESTILOS GERAIS                              */
+/* ========================================== */
+
 body {
     background-color: #f5f5f5;
+    font-size: 16px;
 }
 
 .navbar {
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.navbar-brand {
+    font-size: 1.1rem;
 }
 
 .card {
@@ -15,14 +24,14 @@ body {
     background-color: white;
 }
 
-.badge {
-    font-size: 0.75rem;
-}
+/* ========================================== */
+/* TABELA DA ESCALA                            */
+/* ========================================== */
 
-/* Tabela da Escala */
 .escala-table {
     background-color: white;
     box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    font-size: 0.9rem;
 }
 
 .escala-table thead th {
@@ -31,6 +40,7 @@ body {
     text-align: center;
     vertical-align: middle;
     padding: 10px;
+    white-space: nowrap;
 }
 
 .escala-table tbody td {
@@ -39,7 +49,6 @@ body {
     padding: 8px;
 }
 
-/* Linha de datas */
 .datas-header th {
     background-color: #495057;
     color: #ffc107;
@@ -48,7 +57,6 @@ body {
     font-weight: bold;
 }
 
-/* Cabeçalho do turno */
 .turno-header td {
     background-color: #e9ecef;
     font-weight: bold;
@@ -56,7 +64,6 @@ body {
     font-size: 1rem;
 }
 
-/* Célula de horário (mesclada) */
 .horario-cell {
     background-color: #f8f9fa;
     font-weight: bold;
@@ -64,17 +71,29 @@ body {
     vertical-align: middle;
     border-right: 2px solid #dee2e6;
     min-width: 80px;
+    white-space: nowrap;
 }
 
-/* Célula do funcionário */
 .funcionario-cell {
     text-align: left !important;
     font-weight: 600;
     background-color: #f8f9fa;
     border-right: 2px solid #dee2e6;
+    min-width: 120px;
 }
 
-/* Badges */
+.status-cell {
+    min-width: 80px;
+}
+
+/* ========================================== */
+/* BADGES                                      */
+/* ========================================== */
+
+.badge {
+    font-size: 0.75rem;
+}
+
 .badge.bg-success {
     background-color: #28a745 !important;
     font-size: 0.8rem;
@@ -100,18 +119,10 @@ body {
     padding: 5px 8px;
 }
 
-@media (max-width: 768px) {
-    .escala-table {
-        font-size: 0.75rem;
-    }
-    
-    .badge {
-        font-size: 0.65rem;
-        padding: 3px 5px;
-    }
-}
+/* ========================================== */
+/* DROPDOWN NO NOME DO FUNCIONARIO            */
+/* ========================================== */
 
-/* Dropdown no nome do funcionário */
 .funcionario-dropdown {
     text-decoration: none !important;
     color: #212529 !important;
@@ -154,4 +165,322 @@ body {
     padding: 8px 16px;
     background-color: #f8f9fa;
     border-bottom: 1px solid #dee2e6;
+}
+
+/* ========================================== */
+/* TABELA DE ESCALAS (LISTAGEM)                */
+/* ========================================== */
+
+.escalas-table {
+    font-size: 0.9rem;
+}
+
+.escalas-table th {
+    white-space: nowrap;
+}
+
+.escalas-table td {
+    vertical-align: middle;
+}
+
+/* ========================================== */
+/* BOTOES                                      */
+/* ========================================== */
+
+.btn-group .btn {
+    white-space: nowrap;
+}
+
+/* ========================================== */
+/* RESPONSIVIDADE - TABLETS                    */
+/* ========================================== */
+
+@media (max-width: 992px) {
+    .navbar-nav {
+        font-size: 0.9rem;
+    }
+    
+    .card-header h5 {
+        font-size: 1rem;
+    }
+    
+    .escala-table {
+        font-size: 0.75rem;
+    }
+    
+    .escala-table thead th,
+    .escala-table tbody td {
+        padding: 6px 4px;
+    }
+    
+    .horario-cell {
+        min-width: 60px;
+        font-size: 0.7rem;
+    }
+    
+    .funcionario-cell {
+        min-width: 90px;
+        font-size: 0.75rem;
+    }
+    
+    .status-cell {
+        min-width: 60px;
+    }
+    
+    .badge {
+        font-size: 0.65rem;
+        padding: 3px 6px;
+    }
+}
+
+/* ========================================== */
+/* RESPONSIVIDADE - CELULARES                  */
+/* ========================================== */
+
+@media (max-width: 768px) {
+    body {
+        font-size: 14px;
+    }
+    
+    .container {
+        padding-left: 8px;
+        padding-right: 8px;
+    }
+    
+    h2 {
+        font-size: 1.3rem;
+    }
+    
+    h3 {
+        font-size: 1.1rem;
+    }
+    
+    h5 {
+        font-size: 0.95rem;
+    }
+    
+    /* Navbar */
+    .navbar-brand {
+        font-size: 1rem;
+    }
+    
+    .navbar-nav .nav-link {
+        font-size: 0.85rem;
+        padding: 6px 8px;
+    }
+    
+    /* Cards do Dashboard */
+    .card-header h5 {
+        font-size: 0.9rem;
+    }
+    
+    .card-body h3 {
+        font-size: 1.5rem;
+    }
+    
+    .card-body p {
+        font-size: 0.85rem;
+        margin-bottom: 8px;
+    }
+    
+    .btn {
+        font-size: 0.8rem;
+        padding: 6px 12px;
+    }
+    
+    /* Tabela da Escala */
+    .escala-table {
+        font-size: 0.65rem;
+    }
+    
+    .escala-table thead th {
+        padding: 5px 2px;
+        font-size: 0.6rem;
+    }
+    
+    .escala-table tbody td {
+        padding: 4px 2px;
+    }
+    
+    .datas-header th {
+        font-size: 0.55rem;
+        padding: 3px;
+    }
+    
+    .horario-cell {
+        min-width: 50px;
+        font-size: 0.6rem;
+        padding: 4px 2px;
+    }
+    
+    .funcionario-cell {
+        min-width: 70px;
+        font-size: 0.65rem;
+        padding: 4px;
+    }
+    
+    .funcionario-dropdown {
+        font-size: 0.65rem;
+    }
+    
+    .status-cell {
+        min-width: 45px;
+    }
+    
+    .badge {
+        font-size: 0.55rem;
+        padding: 2px 4px;
+    }
+    
+    .badge.bg-success,
+    .badge.bg-warning,
+    .badge.bg-info {
+        font-size: 0.55rem;
+        padding: 2px 5px;
+    }
+    
+    .turno-header td {
+        font-size: 0.75rem;
+        padding: 6px;
+    }
+    
+    /* Dropdown */
+    .dropdown-menu {
+        max-height: 200px;
+        font-size: 0.75rem;
+    }
+    
+    .dropdown-item {
+        font-size: 0.7rem;
+        padding: 4px 12px;
+    }
+    
+    /* Tabela de listagem de escalas */
+    .escalas-table {
+        font-size: 0.75rem;
+    }
+    
+    .escalas-table th,
+    .escalas-table td {
+        padding: 6px 4px;
+        font-size: 0.7rem;
+    }
+    
+    /* Botoes em grupo */
+    .btn-group {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+    
+    .btn-group .btn {
+        width: 100%;
+        margin: 0;
+    }
+    
+    /* Ajustar cabecalho das paginas */
+    .d-flex.justify-content-between {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .d-flex.justify-content-between h2 {
+        margin-bottom: 0;
+    }
+    
+    .d-flex.justify-content-between > div {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+    }
+    
+    /* Formularios */
+    .form-control,
+    .form-select {
+        font-size: 0.85rem;
+        padding: 8px;
+    }
+    
+    label {
+        font-size: 0.85rem;
+    }
+    
+    /* Alerts */
+    .alert {
+        font-size: 0.8rem;
+        padding: 8px 12px;
+    }
+}
+
+/* ========================================== */
+/* RESPONSIVIDADE - CELULARES PEQUENOS         */
+/* ========================================== */
+
+@media (max-width: 576px) {
+    .escala-table {
+        font-size: 0.58rem;
+    }
+    
+    .escala-table thead th {
+        padding: 3px 1px;
+        font-size: 0.5rem;
+    }
+    
+    .escala-table tbody td {
+        padding: 2px 1px;
+    }
+    
+    .horario-cell {
+        min-width: 40px;
+        font-size: 0.55rem;
+    }
+    
+    .funcionario-cell {
+        min-width: 55px;
+        font-size: 0.58rem;
+    }
+    
+    .status-cell {
+        min-width: 35px;
+    }
+    
+    .badge {
+        font-size: 0.5rem;
+        padding: 1px 3px;
+    }
+    
+    .funcionario-dropdown {
+        font-size: 0.58rem;
+    }
+    
+    .table-responsive {
+        margin: 0 -8px;
+    }
+}
+
+/* ========================================== */
+/* SCROLL HORIZONTAL SUAVE                     */
+/* ========================================== */
+
+.table-responsive {
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
+}
+
+.table-responsive::-webkit-scrollbar {
+    height: 6px;
+}
+
+.table-responsive::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 3px;
+}
+
+.table-responsive::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 3px;
+}
+
+.table-responsive::-webkit-scrollbar-thumb:hover {
+    background: #555;
 }
