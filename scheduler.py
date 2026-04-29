@@ -61,8 +61,65 @@ def gerar_escala_mensal(mes=None, ano=None):
         horario = HORARIOS_TARDE[i % len(HORARIOS_TARDE)]
         alocacao_fixa[func.id] = horario
     
-    # Obter todas as segundas-feiras do mês
-    segundas = _obter_segundas_do_mes(mes, ano)
+        # Obter o primeiro e último dia do mês
+    from calendar import monthrange
+    primeiro_dia = datetime(ano, mes, 1).date()
+    ultimo_dia = datetime(ano, mes, monthrange(ano, mes)[1]).date()
+    
+    # Controlar quem já folgou domingo NO MÊS ATUAL
+    domingo_no_mes = set()
+    
+    # Adicionar quem folgou no último domingo do mês anterior
+    if historico.get('ultimo_domingo_folgados'):
+        domingo_no_mes.update(historico['ultimo_domingo_folgados'])
+    
+    func_ids = list(alocacao_fixa.keys())
+    
+    # Gerar escala do dia 1 ao último dia
+    data_atual = primeiro_dia
+    while data_atual <= ultimo_dia:
+        # Encontrar a segunda-feira da semana atual
+        dias_ate_segunda = data_atual.weekday()
+        segunda = data_atual - timedelta(days=dias_ate_segunda)
+        
+        # Atribuir folgas da semana
+        folga_por_funcionario = _atribuir_folgas_semana_mensal(
+            alocacao_fixa, historico, domingo_no_mes
+        )
+        
+        # Atualizar quem folgou domingo nesta semana
+        for func_id, dia_folga in folga_por_funcionario.items():
+            if dia_folga == 6:
+                domingo_no_mes.add(func_id)
+        
+        # Criar escala para cada dia da semana
+        for dia in range(7):
+            data = segunda + timedelta(days=dia)
+            
+            # So criar escala se a data estiver dentro do mes
+            if data < primeiro_dia or data > ultimo_dia:
+                continue
+            
+            for func_id in alocacao_fixa:
+                if folga_por_funcionario.get(func_id) == dia:
+                    continue  # Folga
+                
+                horario = alocacao_fixa[func_id]
+                escala = Escala(
+                    funcionario_id=func_id,
+                    mes_escala_id=mes_escala.id,
+                    dia_semana=dia,
+                    horario=horario,
+                    data=data,
+                    ativa=True
+                )
+                db.session.add(escala)
+        
+        # Avançar para a próxima segunda-feira
+        data_atual = segunda + timedelta(days=7)
+    
+    db.session.commit()
+    return mes_escala.id
     
     # Controlar quem já folgou domingo NO MÊS ATUAL
     domingo_no_mes = set()
