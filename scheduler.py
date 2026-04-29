@@ -287,7 +287,7 @@ def gerar_escala_semanal():
     db.session.commit()
     return True
 
-def _atribuir_folgas_semana_mensal(alocacao_fixa, historico, domingo_no_mes, num_semana):
+def _atribuir_folgas_semana_mensal(alocacao_fixa, historico, domingo_no_mes):
     """
     Atribui folgas para uma semana do mes com controle mensal de domingo.
     Garante que todos folguem domingo pelo menos 1x antes de repetir.
