@@ -42,9 +42,11 @@
 <div class="card mb-4">
     <div class="card-header bg-secondary text-white">
         <h5 class="mb-0">
-            Semana {{ loop.index }} 
-            ({{ itens[0].data.strftime('%d/%m') }} a 
-             {{ itens[-1].data.strftime('%d/%m') if itens[-1].data != itens[0].data else itens[0].data.strftime('%d/%m') }})
+            Semana {{ loop.index }}
+            {% if itens %}
+                ({{ itens[0].data.strftime('%d/%m') }} a 
+                 {{ itens[-1].data.strftime('%d/%m') if itens[-1].data != itens[0].data else itens[0].data.strftime('%d/%m') }})
+            {% endif %}
         </h5>
     </div>
     <div class="card-body p-0">
@@ -67,13 +69,13 @@
                         <th></th>
                         {% for dia in range(7) %}
                             <th>
-                                {% set data_encontrada = None %}
+                                {% set data_encontrada = namespace(valor=None) %}
                                 {% for item in itens %}
                                     {% if item.dia_semana == dia %}
-                                        {% set data_encontrada = item.data %}
+                                        {% set data_encontrada.valor = item.data %}
                                     {% endif %}
                                 {% endfor %}
-                                {{ data_encontrada.strftime('%d/%m') if data_encontrada else '-' }}
+                                {{ data_encontrada.valor.strftime('%d/%m') if data_encontrada.valor else '-' }}
                             </th>
                         {% endfor %}
                     </tr>
@@ -96,7 +98,28 @@
                             {% if loop.first %}
                             <td rowspan="{{ funcs|length }}" class="horario-cell"><strong>{{ horario.replace('-', ' às ') }}</strong></td>
                             {% endif %}
-                            <td class="funcionario-cell"><strong>{{ func.nome }}</strong></td>
+                            
+                            <!-- DROPDOWN NO NOME DO FUNCIONÁRIO -->
+                            <td class="funcionario-cell">
+                                <div class="dropdown">
+                                    <button class="btn btn-link dropdown-toggle funcionario-dropdown" type="button" data-bs-toggle="dropdown">
+                                        <strong>{{ func.nome }}</strong>
+                                    </button>
+                                    <ul class="dropdown-menu">
+                                        <li><h6 class="dropdown-header">Trocar {{ func.nome }} por:</h6></li>
+                                        {% for outro_func in todos_funcionarios %}
+                                            {% if outro_func.id != func.id %}
+                                            <li>
+                                                <a class="dropdown-item" href="{{ url_for('trocar_escala', func1=func.id, func2=outro_func.id, dia=-1) }}">
+                                                    ➜ {{ outro_func.nome }}
+                                                </a>
+                                            </li>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </ul>
+                                </div>
+                            </td>
+                            
                             {% for dia in range(7) %}
                                 {% set reg = itens | selectattr('funcionario_id', 'equalto', func.id) | selectattr('dia_semana', 'equalto', dia) | list %}
                                 <td class="text-center">
@@ -128,7 +151,28 @@
                             {% if loop.first %}
                             <td rowspan="{{ funcs|length }}" class="horario-cell"><strong>{{ horario.replace('-', ' às ') }}</strong></td>
                             {% endif %}
-                            <td class="funcionario-cell"><strong>{{ func.nome }}</strong></td>
+                            
+                            <!-- DROPDOWN NO NOME DO FUNCIONÁRIO -->
+                            <td class="funcionario-cell">
+                                <div class="dropdown">
+                                    <button class="btn btn-link dropdown-toggle funcionario-dropdown" type="button" data-bs-toggle="dropdown">
+                                        <strong>{{ func.nome }}</strong>
+                                    </button>
+                                    <ul class="dropdown-menu">
+                                        <li><h6 class="dropdown-header">Trocar {{ func.nome }} por:</h6></li>
+                                        {% for outro_func in todos_funcionarios %}
+                                            {% if outro_func.id != func.id %}
+                                            <li>
+                                                <a class="dropdown-item" href="{{ url_for('trocar_escala', func1=func.id, func2=outro_func.id, dia=-1) }}">
+                                                    ➜ {{ outro_func.nome }}
+                                                </a>
+                                            </li>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </ul>
+                                </div>
+                            </td>
+                            
                             {% for dia in range(7) %}
                                 {% set reg = itens | selectattr('funcionario_id', 'equalto', func.id) | selectattr('dia_semana', 'equalto', dia) | list %}
                                 <td class="text-center">
