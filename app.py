@@ -283,5 +283,9 @@ def _obter_meses_disponiveis():
         meses.append((mes, ano))
     return meses
 
+@app.context_processor
+def utility_processor():
+    return dict(timedelta=timedelta)
+
 if __name__ == '__main__':
     app.run(debug=True)

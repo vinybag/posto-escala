@@ -66,6 +66,12 @@ def gerar_escala_mensal(mes=None, ano=None):
     
     # Controlar quem já folgou domingo NO MÊS ATUAL
     domingo_no_mes = set()
+    
+    # Adicionar quem folgou no último domingo do mês anterior
+    # Isso impede que a mesma pessoa folgue 2 domingos seguidos (entre meses)
+    if historico.get('ultimo_domingo_folgados'):
+        domingo_no_mes.update(historico['ultimo_domingo_folgados'])
+    
     func_ids = list(alocacao_fixa.keys())
     
     # Para cada semana do mês
@@ -111,7 +117,8 @@ def _carregar_historico(funcionarios, mes, ano):
     historico = {
         'domingo': set(),
         'turnos': {},
-        'ultimas_folgas': {}
+        'ultimas_folgas': {},
+        'ultimo_domingo_folgados': set()  # NOVO
     }
     
     # Buscar mês anterior
@@ -126,6 +133,26 @@ def _carregar_historico(funcionarios, mes, ano):
     
     if mes_anterior:
         escalas_anteriores = Escala.query.filter_by(mes_escala_id=mes_anterior.id).all()
+        
+        # Encontrar o último domingo do mês anterior
+        from calendar import monthrange
+        ultimo_dia = monthrange(ano_ant, mes_ant)[1]
+        data_ultimo_domingo = datetime(ano_ant, mes_ant, ultimo_dia).date()
+        while data_ultimo_domingo.weekday() != 6:
+            data_ultimo_domingo = data_ultimo_domingo - timedelta(days=1)
+        
+        # Quem folgou no último domingo
+        for func in funcionarios:
+            trabalhou_ultimo_domingo = any(
+                e.funcionario_id == func.id and e.data == data_ultimo_domingo and e.dia_semana == 6
+                for e in escalas_anteriores
+            )
+            
+            if not trabalhou_ultimo_domingo:
+                # Verificar se houve escala nesse dia
+                houve_escala = any(e.data == data_ultimo_domingo for e in escalas_anteriores)
+                if houve_escala:
+                    historico['ultimo_domingo_folgados'].add(func.id)
         
         for func in funcionarios:
             semanas_manha = 0

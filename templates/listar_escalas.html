@@ -61,7 +61,13 @@
                             <span class="badge bg-success">Atual</span>
                             {% endif %}
                         </td>
-                        <td>{{ mes.data_criacao.strftime('%d/%m/%Y %H:%M') if mes.data_criacao else '-' }}</td>
+                        <td>
+    {% if mes.data_criacao %}
+        {{ (mes.data_criacao + timedelta(hours=-3)).strftime('%d/%m/%Y %H:%M') }}
+    {% else %}
+        -
+    {% endif %}
+</td>
                         <td>{{ escalas_mensais_semanas.get(mes.id, 0) }} semana(s)</td>
                         <td>
                             <div class="btn-group">

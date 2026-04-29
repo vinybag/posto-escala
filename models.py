@@ -29,7 +29,7 @@ class MesEscala(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     mes = db.Column(db.Integer, nullable=False)  # 1 a 12
     ano = db.Column(db.Integer, nullable=False)
-    data_criacao = db.Column(db.DateTime, default=datetime.utcnow)
+    data_criacao = db.Column(db.DateTime, default=datetime.now)
     ativo = db.Column(db.Boolean, default=True)
     
     escalas = db.relationship('Escala', backref='mes_escala', lazy=True)
