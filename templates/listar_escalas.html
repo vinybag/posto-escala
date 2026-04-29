@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Gerenciar Escalas</h2>
+    <div>
+        <a href="{{ url_for('gerar_escala_mensal') }}" class="btn btn-success me-2">+ Nova Escala Mensal</a>
+        <a href="{{ url_for('gerar_escala') }}" class="btn btn-primary me-2">+ Nova Escala Semanal</a>
+        <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">Voltar</a>
+    </div>
+</div>
+
+<!-- Escala Semanal Atual -->
+<div class="card mb-4">
+    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">Escala Semanal Atual</h5>
+        <div>
+            <a href="{{ url_for('ver_escala') }}" class="btn btn-light btn-sm me-2">Visualizar</a>
+            <a href="{{ url_for('excluir_escala_semanal') }}" 
+               class="btn btn-danger btn-sm"
+               onclick="return confirm('Excluir escala semanal atual?')">
+                Excluir
+            </a>
+        </div>
+    </div>
+    <div class="card-body">
+        {% set escala_semanal = escala_semanal_count if escala_semanal_count is defined else 0 %}
+        <p>Registros ativos: <strong>{{ escala_semanal_count }}</strong></p>
+    </div>
+</div>
+
+<!-- Escalas Mensais -->
+<div class="card">
+    <div class="card-header bg-info text-white">
+        <h5 class="mb-0">Escalas Mensais</h5>
+    </div>
+    <div class="card-body">
+        {% if escalas_mensais %}
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Mês/Ano</th>
+                        <th>Data de Criação</th>
+                        <th>Semanas</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for mes in escalas_mensais %}
+                    <tr>
+                        <td>
+                            <strong>
+                                {{ ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 
+                                    'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'][mes.mes-1] }} 
+                                / {{ mes.ano }}
+                            </strong>
+                        </td>
+                        <td>{{ mes.data_criacao.strftime('%d/%m/%Y %H:%M') if mes.data_criacao else '-' }}</td>
+                        <td>
+                            {% set semanas = escalas_mensais_semanas.get(mes.id, 0) %}
+                            {{ semanas }} semana(s)
+                        </td>
+                        <td>
+                            <div class="btn-group">
+                                <a href="{{ url_for('ver_escala_mensal', mes_id=mes.id) }}" 
+                                   class="btn btn-sm btn-primary">👁️ Ver</a>
+                                <a href="{{ url_for('excluir_escala_mensal', mes_id=mes.id) }}" 
+                                   class="btn btn-sm btn-danger"
+                                   onclick="return confirm('Excluir escala de {{ ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'][mes.mes-1] }}/{{ mes.ano }}?')">
+                                    Excluir
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-5">
+            <h4 class="text-muted">Nenhuma escala mensal gerada</h4>
+            <p>Clique em "Nova Escala Mensal" para começar</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

@@ -200,20 +200,52 @@ def trocar_escala():
     
     return redirect(url_for('ver_escala'))
 
+@app.route('/escalas')
+@login_required
+def listar_escalas():
+    """Lista todas as escalas geradas"""
+    escalas_mensais = MesEscala.query.order_by(MesEscala.ano.desc(), MesEscala.mes.desc()).all()
+    
+    # Contar registros da escala semanal
+    escala_semanal_count = Escala.query.filter_by(ativa=True, mes_escala_id=None).count()
+    
+    # Contar semanas por mês
+    escalas_mensais_semanas = {}
+    for mes in escalas_mensais:
+        count = Escala.query.filter_by(mes_escala_id=mes.id).count()
+        escalas_mensais_semanas[mes.id] = count // 7 if count > 0 else 0
+    
+    return render_template('listar_escalas.html', 
+                         escalas_mensais=escalas_mensais,
+                         escala_semanal_count=escala_semanal_count,
+                         escalas_mensais_semanas=escalas_mensais_semanas)
+
+
+@app.route('/excluir-escala-semanal')
+@login_required
+def excluir_escala_semanal():
+    """Exclui a escala semanal atual"""
+    count = Escala.query.filter_by(ativa=True).delete()
+    db.session.commit()
+    flash(f'Escala semanal excluída! ({count} registros removidos)', 'success')
+    return redirect(url_for('dashboard'))
+
+
 @app.route('/excluir-escala-mensal/<int:mes_id>')
 @login_required
 def excluir_escala_mensal(mes_id):
+    """Exclui uma escala mensal completa"""
     mes_escala = MesEscala.query.get_or_404(mes_id)
     
     # Excluir todas as escalas deste mês
-    Escala.query.filter_by(mes_escala_id=mes_id).delete()
+    count = Escala.query.filter_by(mes_escala_id=mes_id).delete()
     
     # Excluir o registro do mês
     db.session.delete(mes_escala)
     db.session.commit()
     
-    flash(f'Escala de {mes_escala.mes:02d}/{mes_escala.ano} excluída!', 'success')
-    return redirect(url_for('dashboard'))
+    flash(f'Escala de {mes_escala.mes:02d}/{mes_escala.ano} excluída! ({count} registros)', 'success')
+    return redirect(url_for('listar_escalas'))
 
 # ============================================
 # FUNÇÕES AUXILIARES
