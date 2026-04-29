@@ -64,12 +64,21 @@ def gerar_escala_mensal(mes=None, ano=None):
     # Obter todas as segundas-feiras do mês
     segundas = _obter_segundas_do_mes(mes, ano)
     
+    # Controlar quem já folgou domingo NO MÊS ATUAL
+    domingo_no_mes = set()
+    func_ids = list(alocacao_fixa.keys())
+    
     # Para cada semana do mês
     for num_semana, segunda in enumerate(segundas):
-        # Atribuir folgas da semana
-        folga_por_funcionario = _atribuir_folgas_semana(
-            alocacao_fixa, historico, num_semana
+        # Atribuir folgas da semana com controle mensal de domingo
+        folga_por_funcionario = _atribuir_folgas_semana_mensal(
+            alocacao_fixa, historico, domingo_no_mes
         )
+        
+        # Atualizar quem folgou domingo nesta semana
+        for func_id, dia_folga in folga_por_funcionario.items():
+            if dia_folga == 6:
+                domingo_no_mes.add(func_id)
         
         # Criar escala para cada dia da semana
         for dia in range(7):
@@ -96,7 +105,6 @@ def gerar_escala_mensal(mes=None, ano=None):
     
     db.session.commit()
     return mes_escala.id
-
 
 def _carregar_historico(funcionarios, mes, ano):
     """Carrega histórico do mês anterior"""
@@ -278,3 +286,40 @@ def gerar_escala_semanal():
     
     db.session.commit()
     return True
+
+def _atribuir_folgas_semana_mensal(alocacao_fixa, historico, domingo_no_mes, num_semana):
+    """
+    Atribui folgas para uma semana do mes com controle mensal de domingo.
+    Garante que todos folguem domingo pelo menos 1x antes de repetir.
+    """
+    func_ids = list(alocacao_fixa.keys())
+    random.shuffle(func_ids)
+    
+    # Separar quem nunca folgou domingo no mes
+    nunca_folgou_domingo = [f for f in func_ids if f not in domingo_no_mes]
+    ja_folgou_domingo = [f for f in func_ids if f in domingo_no_mes]
+    
+    # 4 para domingo (prioridade: quem nunca folgou)
+    random.shuffle(nunca_folgou_domingo)
+    random.shuffle(ja_folgou_domingo)
+    
+    candidatos_domingo = nunca_folgou_domingo + ja_folgou_domingo
+    folgados_domingo = set(candidatos_domingo[:4])
+    
+    folga_por_funcionario = {}
+    
+    for func_id in func_ids:
+        if func_id in folgados_domingo:
+            folga_por_funcionario[func_id] = 6
+        else:
+            # Evitar mesmo dia da semana passada
+            dia_proibido = historico.get('ultimas_folgas', {}).get(func_id, -1)
+            dias_disponiveis = [d for d in range(6) if d != dia_proibido]
+            
+            if not dias_disponiveis:
+                dias_disponiveis = list(range(6))
+            
+            dia_escolhido = random.choice(dias_disponiveis)
+            folga_por_funcionario[func_id] = dia_escolhido
+    
+    return folga_por_funcionario
