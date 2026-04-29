@@ -3,10 +3,10 @@
 <h2>Dashboard</h2>
 
 <div class="row mt-4">
-    <div class="col-md-4">
+    <div class="col-md-3">
         <div class="card">
             <div class="card-header">
-                <h5>Funcionários Cadastrados</h5>
+                <h5>Funcionarios Cadastrados</h5>
             </div>
             <div class="card-body">
                 <h3>{{ funcionarios|length }}</h3>
@@ -15,26 +15,38 @@
         </div>
     </div>
     
-    <div class="col-md-4">
+    <div class="col-md-3">
         <div class="card">
             <div class="card-header">
                 <h5>Escala Semanal</h5>
             </div>
             <div class="card-body">
-                <p>Cria escala da próxima semana (6x1)</p>
+                <p>Cria escala da proxima semana (6x1)</p>
                 <a href="{{ url_for('gerar_escala') }}" class="btn btn-success">Gerar Escala Semanal</a>
             </div>
         </div>
     </div>
 
-    <div class="col-md-4">
+    <div class="col-md-3">
         <div class="card">
             <div class="card-header bg-info text-white">
                 <h5>Escala Mensal</h5>
             </div>
             <div class="card-body">
-                <p>Gera escala para o mês inteiro</p>
+                <p>Gera escala para o mes inteiro</p>
                 <a href="{{ url_for('gerar_escala_mensal') }}" class="btn btn-info">Gerar Escala Mensal</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-header bg-secondary text-white">
+                <h5>Importar Escala</h5>
+            </div>
+            <div class="card-body">
+                <p>Importar uma escala ja pronta</p>
+                <a href="{{ url_for('importar_escala') }}" class="btn btn-secondary">Importar</a>
             </div>
         </div>
     </div>
