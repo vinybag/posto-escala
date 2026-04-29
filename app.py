@@ -120,10 +120,22 @@ def gerar_escala():
 @app.route('/escala')
 @login_required
 def ver_escala():
-    # Mostrar sempre a escala semanal (não redirecionar)
-    escala = Escala.query.filter_by(ativa=True).order_by(Escala.horario, Escala.funcionario_id, Escala.dia_semana).all()
-    todos_funcionarios = Funcionario.query.filter_by(ativo=True).all()
-    return render_template('escala.html', escala=escala, todos_funcionarios=todos_funcionarios)
+    # Buscar a escala do mes atual
+    hoje = datetime.now().date()
+    mes_atual = hoje.month
+    ano_atual = hoje.year
+    
+    mes_escala = MesEscala.query.filter_by(mes=mes_atual, ano=ano_atual).first()
+    
+    # Se nao tem do mes atual, pega a mais recente
+    if not mes_escala:
+        mes_escala = MesEscala.query.order_by(MesEscala.id.desc()).first()
+    
+    if mes_escala:
+        return redirect(url_for('ver_escala_mensal', mes_id=mes_escala.id))
+    else:
+        flash('Nenhuma escala encontrada. Gere uma escala mensal!', 'warning')
+        return redirect(url_for('gerar_escala_mensal'))
 
 @app.route('/gerar-escala-mensal', methods=['GET', 'POST'])
 @login_required
@@ -204,13 +216,17 @@ def trocar_escala():
 @login_required
 def listar_escalas():
     """Lista todas as escalas geradas"""
+    from datetime import datetime
+    from sqlalchemy import func
+    
+    hoje = datetime.now().date()
+    
     escalas_mensais = MesEscala.query.order_by(MesEscala.ano.desc(), MesEscala.mes.desc()).all()
     
     # Contar registros da escala semanal
     escala_semanal_count = Escala.query.filter_by(ativa=True, mes_escala_id=None).count()
     
-    # Contar semanas por mês (número de datas únicas ÷ 7)
-    from sqlalchemy import func
+    # Contar semanas por mes
     escalas_mensais_semanas = {}
     for mes in escalas_mensais:
         datas_unicas = db.session.query(Escala.data).filter_by(mes_escala_id=mes.id).distinct().count()
@@ -219,8 +235,9 @@ def listar_escalas():
     return render_template('listar_escalas.html', 
                          escalas_mensais=escalas_mensais,
                          escala_semanal_count=escala_semanal_count,
-                         escalas_mensais_semanas=escalas_mensais_semanas)
-
+                         escalas_mensais_semanas=escalas_mensais_semanas,
+                         current_month=hoje.month,
+                         current_year=hoje.year)
 
 @app.route('/excluir-escala-semanal')
 @login_required

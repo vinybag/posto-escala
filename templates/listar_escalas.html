@@ -12,7 +12,7 @@
 <!-- Escala Semanal Atual -->
 <div class="card mb-4">
     <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
-        <h5 class="mb-0">Escala Semanal Atual</h5>
+        <h5 class="mb-0">Escala Semanal</h5>
         <div>
             <a href="{{ url_for('ver_escala') }}" class="btn btn-light btn-sm me-2">Visualizar</a>
             <a href="{{ url_for('excluir_escala_semanal') }}" 
@@ -23,8 +23,11 @@
         </div>
     </div>
     <div class="card-body">
-        {% set escala_semanal = escala_semanal_count if escala_semanal_count is defined else 0 %}
+        {% if escala_semanal_count > 0 %}
         <p>Registros ativos: <strong>{{ escala_semanal_count }}</strong></p>
+        {% else %}
+        <p class="text-muted">Nenhuma escala semanal gerada</p>
+        {% endif %}
     </div>
 </div>
 
@@ -39,10 +42,10 @@
             <table class="table table-hover">
                 <thead>
                     <tr>
-                        <th>Mês/Ano</th>
-                        <th>Data de Criação</th>
+                        <th>Mes/Ano</th>
+                        <th>Data de Criacao</th>
                         <th>Semanas</th>
-                        <th>Ações</th>
+                        <th>Acoes</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -50,23 +53,23 @@
                     <tr>
                         <td>
                             <strong>
-                                {{ ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 
+                                {{ ['Janeiro', 'Fevereiro', 'Marco', 'Abril', 'Maio', 'Junho', 
                                     'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'][mes.mes-1] }} 
                                 / {{ mes.ano }}
                             </strong>
+                            {% if mes.mes == current_month and mes.ano == current_year %}
+                            <span class="badge bg-success">Atual</span>
+                            {% endif %}
                         </td>
                         <td>{{ mes.data_criacao.strftime('%d/%m/%Y %H:%M') if mes.data_criacao else '-' }}</td>
-                        <td>
-                            {% set semanas = escalas_mensais_semanas.get(mes.id, 0) %}
-                            {{ semanas }} semana(s)
-                        </td>
+                        <td>{{ escalas_mensais_semanas.get(mes.id, 0) }} semana(s)</td>
                         <td>
                             <div class="btn-group">
                                 <a href="{{ url_for('ver_escala_mensal', mes_id=mes.id) }}" 
-                                   class="btn btn-sm btn-primary">👁️ Ver</a>
+                                   class="btn btn-sm btn-primary">Ver</a>
                                 <a href="{{ url_for('excluir_escala_mensal', mes_id=mes.id) }}" 
                                    class="btn btn-sm btn-danger"
-                                   onclick="return confirm('Excluir escala de {{ ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'][mes.mes-1] }}/{{ mes.ano }}?')">
+                                   onclick="return confirm('Excluir escala de {{ ['Janeiro', 'Fevereiro', 'Marco', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'][mes.mes-1] }}/{{ mes.ano }}?')">
                                     Excluir
                                 </a>
                             </div>
@@ -79,7 +82,7 @@
         {% else %}
         <div class="text-center py-5">
             <h4 class="text-muted">Nenhuma escala mensal gerada</h4>
-            <p>Clique em "Nova Escala Mensal" para começar</p>
+            <p>Clique em "Nova Escala Mensal" para comecar</p>
         </div>
         {% endif %}
     </div>
