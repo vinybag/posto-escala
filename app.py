@@ -48,6 +48,15 @@ with app.app_context():
                 conn.commit()
             print("Coluna mes_escala_id adicionada com sucesso!")
         
+        # Verificar se a coluna pode_folgar_domingo existe na tabela funcionarios
+        colunas_func = [c['name'] for c in inspector.get_columns('funcionarios')]
+        
+        if 'pode_folgar_domingo' not in colunas_func:
+            with db.engine.connect() as conn:
+                conn.execute(text('ALTER TABLE funcionarios ADD COLUMN pode_folgar_domingo BOOLEAN DEFAULT 1'))
+                conn.commit()
+            print("Coluna pode_folgar_domingo adicionada com sucesso!")
+        
         # Criar admin padrão se não existir
         if not Usuario.query.filter_by(username='admin').first():
             admin = Usuario(username='admin', password='admin123', is_admin=True)
@@ -79,16 +88,34 @@ def listar_funcionarios():
 def novo_funcionario():
     nome = request.form.get('nome')
     preferencia = request.form.get('preferencia', 'misto')
+    pode_folgar_domingo = request.form.get('pode_folgar_domingo') == 'sim'
     
     if nome:
         funcionario = Funcionario(
             nome=nome,
-            preferencia_turno=preferencia
+            preferencia_turno=preferencia,
+            pode_folgar_domingo=pode_folgar_domingo
         )
         db.session.add(funcionario)
         db.session.commit()
-        flash('Funcionário cadastrado com sucesso!', 'success')
+        flash('Funcionario cadastrado com sucesso!', 'success')
     return redirect(url_for('listar_funcionarios'))
+
+@app.route('/funcionarios/editar/<int:id>', methods=['GET', 'POST'])
+@login_required
+def editar_funcionario(id):
+    funcionario = Funcionario.query.get_or_404(id)
+    
+    if request.method == 'POST':
+        funcionario.nome = request.form.get('nome')
+        funcionario.preferencia_turno = request.form.get('preferencia')
+        funcionario.pode_folgar_domingo = request.form.get('pode_folgar_domingo') == 'sim'
+        
+        db.session.commit()
+        flash(f'Funcionario {funcionario.nome} atualizado com sucesso!', 'success')
+        return redirect(url_for('listar_funcionarios'))
+    
+    return render_template('editar_funcionario.html', funcionario=funcionario)
 
 @app.route('/funcionarios/excluir/<int:id>')
 @login_required

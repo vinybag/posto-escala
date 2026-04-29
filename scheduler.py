@@ -216,8 +216,19 @@ def _atribuir_folgas_semana(alocacao_fixa, historico, num_semana):
     total_func = len(func_ids)
     num_domingo = min(4, total_func)
     
+    # Separar quem NAO pode folgar domingo
+    nao_pode_domingo = []
+    for func_id in func_ids:
+        funcionario = Funcionario.query.get(func_id)
+        if funcionario and not funcionario.pode_folgar_domingo:
+            nao_pode_domingo.append(func_id)
+    
+    # Candidatos a domingo (quem pode folgar)
     candidatos_domingo = []
     for func_id in func_ids:
+        if func_id in nao_pode_domingo:
+            continue  # Pula quem nao pode
+        
         if func_id not in historico['domingo']:
             candidatos_domingo.append((func_id, 0))
         else:
@@ -261,7 +272,7 @@ def _atribuir_folgas_semana(alocacao_fixa, historico, num_semana):
 def _atribuir_folgas_semana_mensal(alocacao_fixa, historico, domingo_no_mes):
     """
     Atribui folgas para uma semana com controle mensal de domingo.
-    Domingo: 4 folgas fixas.
+    Domingo: 4 folgas fixas (respeita quem nao pode folgar domingo).
     SEG a SAB: pelo menos 1 folga por dia, restante distribuido aleatoriamente.
     """
     func_ids = list(alocacao_fixa.keys())
@@ -270,17 +281,26 @@ def _atribuir_folgas_semana_mensal(alocacao_fixa, historico, domingo_no_mes):
     total_func = len(func_ids)
     num_domingo = min(4, total_func)
     
-    # 4 para domingo (prioridade: quem nunca folgou)
-    nunca_folgou_domingo = [f for f in func_ids if f not in domingo_no_mes]
-    ja_folgou_domingo = [f for f in func_ids if f in domingo_no_mes]
+    # Separar quem NAO pode folgar domingo
+    nao_pode_domingo = []
+    for func_id in func_ids:
+        funcionario = Funcionario.query.get(func_id)
+        if funcionario and not funcionario.pode_folgar_domingo:
+            nao_pode_domingo.append(func_id)
+    
+    # Quem nunca folgou domingo (e pode folgar)
+    nunca_folgou_domingo = [f for f in func_ids if f not in domingo_no_mes and f not in nao_pode_domingo]
+    # Quem ja folgou domingo (e pode folgar)
+    ja_folgou_domingo = [f for f in func_ids if f in domingo_no_mes and f not in nao_pode_domingo]
     
     random.shuffle(nunca_folgou_domingo)
     random.shuffle(ja_folgou_domingo)
     
+    # Prioridade: quem nunca folgou primeiro
     candidatos_domingo = nunca_folgou_domingo + ja_folgou_domingo
     folgados_domingo = set(candidatos_domingo[:num_domingo])
     
-    # Quem nao folga domingo vai folgar SEG a SAB
+    # Quem nao folga domingo (incluindo quem nao pode + quem nao foi sorteado)
     folgam_outros = [f for f in func_ids if f not in folgados_domingo]
     random.shuffle(folgam_outros)
     

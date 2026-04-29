@@ -20,6 +20,7 @@ class Funcionario(db.Model):
     ativo = db.Column(db.Boolean, default=True)
     ultima_folga = db.Column(db.Date)
     preferencia_turno = db.Column(db.String(20))  # manha, tarde, misto
+    pode_folgar_domingo = db.Column(db.Boolean, default=True)
     
     escalas = db.relationship('Escala', backref='funcionario', lazy=True)
 

@@ -1,12 +1,12 @@
 {% extends "base.html" %}
 {% block content %}
-<h2>Cadastro de Funcionários</h2>
+<h2>Cadastro de Funcionarios</h2>
 
 <div class="row mt-4">
     <div class="col-md-4">
         <div class="card">
             <div class="card-header">
-                <h5>Novo Funcionário</h5>
+                <h5>Novo Funcionario</h5>
             </div>
             <div class="card-body">
                 <form action="{{ url_for('novo_funcionario') }}" method="POST">
@@ -15,11 +15,18 @@
                         <input type="text" class="form-control" id="nome" name="nome" required>
                     </div>
                     <div class="mb-3">
-                        <label for="preferencia" class="form-label">Preferência de Turno</label>
+                        <label for="preferencia" class="form-label">Preferencia de Turno</label>
                         <select class="form-control" id="preferencia" name="preferencia">
-                            <option value="misto">Sem preferência (Misto)</option>
-                            <option value="manha">Somente Manhã</option>
+                            <option value="misto">Sem preferencia (Misto)</option>
+                            <option value="manha">Somente Manha</option>
                             <option value="tarde">Somente Tarde</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="pode_folgar_domingo" class="form-label">Pode folgar no domingo?</label>
+                        <select class="form-control" id="pode_folgar_domingo" name="pode_folgar_domingo">
+                            <option value="sim" selected>Sim</option>
+                            <option value="nao">Nao</option>
                         </select>
                     </div>
                     <button type="submit" class="btn btn-primary">Cadastrar</button>
@@ -31,47 +38,59 @@
     <div class="col-md-8">
         <div class="card">
             <div class="card-header">
-                <h5>Funcionários Cadastrados</h5>
+                <h5>Funcionarios Cadastrados</h5>
             </div>
             <div class="card-body">
-                <table class="table">
-                    <thead>
-                        <tr>
-                            <th>Nome</th>
-                            <th>Preferência</th>
-                            <th>Status</th>
-                            <th>Ações</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for func in funcionarios %}
-                        <tr>
-                            <td>{{ func.nome }}</td>
-                            <td>
-                                {% if func.preferencia_turno == 'manha' %}
-                                    <span class="badge bg-warning text-dark">Manhã</span>
-                                {% elif func.preferencia_turno == 'tarde' %}
-                                    <span class="badge bg-info">Tarde</span>
-                                {% else %}
-                                    <span class="badge bg-secondary">Misto</span>
-                                {% endif %}
-                            </td>
-                            <td>
-                                {% if func.ativo %}
-                                <span class="badge bg-success">Ativo</span>
-                                {% else %}
-                                <span class="badge bg-danger">Inativo</span>
-                                {% endif %}
-                            </td>
-                            <td>
-                                <a href="{{ url_for('excluir_funcionario', id=func.id) }}" 
-                                   class="btn btn-sm btn-danger"
-                                   onclick="return confirm('Tem certeza?')">Excluir</a>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Nome</th>
+                                <th>Preferencia</th>
+                                <th>Dom?</th>
+                                <th>Status</th>
+                                <th>Acoes</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for func in funcionarios %}
+                            <tr>
+                                <td>{{ func.nome }}</td>
+                                <td>
+                                    {% if func.preferencia_turno == 'manha' %}
+                                        <span class="badge bg-warning text-dark">Manha</span>
+                                    {% elif func.preferencia_turno == 'tarde' %}
+                                        <span class="badge bg-info">Tarde</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">Misto</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if func.pode_folgar_domingo %}
+                                        <span class="badge bg-success">Sim</span>
+                                    {% else %}
+                                        <span class="badge bg-danger">Nao</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if func.ativo %}
+                                    <span class="badge bg-success">Ativo</span>
+                                    {% else %}
+                                    <span class="badge bg-danger">Inativo</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <a href="{{ url_for('editar_funcionario', id=func.id) }}" 
+                                       class="btn btn-sm btn-warning">Editar</a>
+                                    <a href="{{ url_for('excluir_funcionario', id=func.id) }}" 
+                                       class="btn btn-sm btn-danger"
+                                       onclick="return confirm('Tem certeza?')">Excluir</a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </div>
