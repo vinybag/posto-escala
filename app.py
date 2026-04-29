@@ -120,16 +120,10 @@ def gerar_escala():
 @app.route('/escala')
 @login_required
 def ver_escala():
-    # Verificar se existe escala mensal
-    ultimo_mes = MesEscala.query.order_by(MesEscala.id.desc()).first()
-    
-    if ultimo_mes:
-        return redirect(url_for('ver_escala_mensal', mes_id=ultimo_mes.id))
-    else:
-        # Fallback: mostrar escala semanal
-        escala = Escala.query.filter_by(ativa=True).order_by(Escala.horario, Escala.funcionario_id, Escala.dia_semana).all()
-        todos_funcionarios = Funcionario.query.filter_by(ativo=True).all()
-        return render_template('escala.html', escala=escala, todos_funcionarios=todos_funcionarios)
+    # Mostrar sempre a escala semanal (não redirecionar)
+    escala = Escala.query.filter_by(ativa=True).order_by(Escala.horario, Escala.funcionario_id, Escala.dia_semana).all()
+    todos_funcionarios = Funcionario.query.filter_by(ativo=True).all()
+    return render_template('escala.html', escala=escala, todos_funcionarios=todos_funcionarios)
 
 @app.route('/gerar-escala-mensal', methods=['GET', 'POST'])
 @login_required
@@ -205,6 +199,21 @@ def trocar_escala():
             flash(f'Troca realizada no dia!', 'success')
     
     return redirect(url_for('ver_escala'))
+
+@app.route('/excluir-escala-mensal/<int:mes_id>')
+@login_required
+def excluir_escala_mensal(mes_id):
+    mes_escala = MesEscala.query.get_or_404(mes_id)
+    
+    # Excluir todas as escalas deste mês
+    Escala.query.filter_by(mes_escala_id=mes_id).delete()
+    
+    # Excluir o registro do mês
+    db.session.delete(mes_escala)
+    db.session.commit()
+    
+    flash(f'Escala de {mes_escala.mes:02d}/{mes_escala.ano} excluída!', 'success')
+    return redirect(url_for('dashboard'))
 
 # ============================================
 # FUNÇÕES AUXILIARES

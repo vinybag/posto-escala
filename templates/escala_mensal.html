@@ -24,6 +24,11 @@
         </div>
         
         <a href="{{ url_for('gerar_escala_mensal') }}" class="btn btn-success me-2">+ Nova Escala</a>
+        <a href="{{ url_for('excluir_escala_mensal', mes_id=mes_escala.id) }}"
+           class="btn btn-danger me-2"
+           onclick="return confirm('Tem certeza que deseja excluir TODA a escala?')">
+            Excluir
+        </a>
         <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">Voltar</a>
     </div>
 </div>
