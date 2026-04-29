@@ -209,9 +209,12 @@ def _distribuir_turnos(somente_manha, somente_tarde, misto, historico):
 
 
 def _atribuir_folgas_semana(alocacao_fixa, historico, num_semana):
-    """Atribui folgas para uma semana do mes (usado pela escala semanal)"""
+    """Atribui folgas para uma semana - 4 no DOM, 1 por dia SEG-SAB, resto distribuido"""
     func_ids = list(alocacao_fixa.keys())
     random.shuffle(func_ids)
+    
+    total_func = len(func_ids)
+    num_domingo = min(4, total_func)
     
     candidatos_domingo = []
     for func_id in func_ids:
@@ -221,7 +224,27 @@ def _atribuir_folgas_semana(alocacao_fixa, historico, num_semana):
             candidatos_domingo.append((func_id, 1))
     
     candidatos_domingo.sort(key=lambda x: x[1])
-    folgados_domingo = set(c[0] for c in candidatos_domingo[:4])
+    folgados_domingo = set(c[0] for c in candidatos_domingo[:num_domingo])
+    
+    folgam_outros = [f for f in func_ids if f not in folgados_domingo]
+    random.shuffle(folgam_outros)
+    
+    dias_semana = 6
+    folgas_por_dia = {0: [], 1: [], 2: [], 3: [], 4: [], 5: []}
+    
+    idx = 0
+    for dia in range(dias_semana):
+        if idx < len(folgam_outros):
+            folgas_por_dia[dia].append(folgam_outros[idx])
+            idx += 1
+    
+    while idx < len(folgam_outros):
+        dias_ordenados = sorted(range(dias_semana), key=lambda d: len(folgas_por_dia[d]))
+        for dia in dias_ordenados:
+            if idx >= len(folgam_outros):
+                break
+            folgas_por_dia[dia].append(folgam_outros[idx])
+            idx += 1
     
     folga_por_funcionario = {}
     
@@ -229,8 +252,10 @@ def _atribuir_folgas_semana(alocacao_fixa, historico, num_semana):
         if func_id in folgados_domingo:
             folga_por_funcionario[func_id] = 6
         else:
-            dia = random.randint(0, 5)
-            folga_por_funcionario[func_id] = dia
+            for dia, lista in folgas_por_dia.items():
+                if func_id in lista:
+                    folga_por_funcionario[func_id] = dia
+                    break
     
     return folga_por_funcionario
 
@@ -238,10 +263,16 @@ def _atribuir_folgas_semana(alocacao_fixa, historico, num_semana):
 def _atribuir_folgas_semana_mensal(alocacao_fixa, historico, domingo_no_mes):
     """
     Atribui folgas para uma semana com controle mensal de domingo.
-    Garante que todos folguem domingo pelo menos 1x antes de repetir.
+    Domingo: 4 folgas.
+    SEG a SAB: 1 folga garantida por dia, o restante distribuido igualmente.
     """
     func_ids = list(alocacao_fixa.keys())
     random.shuffle(func_ids)
+    
+    total_func = len(func_ids)
+    
+    # 4 para domingo (ou menos se tiver poucos funcionarios)
+    num_domingo = min(4, total_func)
     
     nunca_folgou_domingo = [f for f in func_ids if f not in domingo_no_mes]
     ja_folgou_domingo = [f for f in func_ids if f in domingo_no_mes]
@@ -250,22 +281,46 @@ def _atribuir_folgas_semana_mensal(alocacao_fixa, historico, domingo_no_mes):
     random.shuffle(ja_folgou_domingo)
     
     candidatos_domingo = nunca_folgou_domingo + ja_folgou_domingo
-    folgados_domingo = set(candidatos_domingo[:4])
+    folgados_domingo = set(candidatos_domingo[:num_domingo])
     
+    # Quem nao folga domingo vai folgar SEG a SAB
+    folgam_outros = [f for f in func_ids if f not in folgados_domingo]
+    random.shuffle(folgam_outros)
+    
+    # Numero de dias para distribuir (sempre 6: SEG a SAB)
+    dias_semana = 6
+    
+    # Cada dia recebe pelo menos 1 folga
+    folgas_por_dia = {0: [], 1: [], 2: [], 3: [], 4: [], 5: []}
+    
+    # Primeira rodada: garantir 1 folga por dia
+    idx = 0
+    for dia in range(dias_semana):
+        if idx < len(folgam_outros):
+            folgas_por_dia[dia].append(folgam_outros[idx])
+            idx += 1
+    
+    # Segunda rodada: distribuir o restante igualmente
+    while idx < len(folgam_outros):
+        # Ordenar dias por quantidade (quem tem menos recebe primeiro)
+        dias_ordenados = sorted(range(dias_semana), key=lambda d: len(folgas_por_dia[d]))
+        for dia in dias_ordenados:
+            if idx >= len(folgam_outros):
+                break
+            folgas_por_dia[dia].append(folgam_outros[idx])
+            idx += 1
+    
+    # Montar resultado
     folga_por_funcionario = {}
     
     for func_id in func_ids:
         if func_id in folgados_domingo:
-            folga_por_funcionario[func_id] = 6
+            folga_por_funcionario[func_id] = 6  # domingo
         else:
-            dia_proibido = historico.get('ultimas_folgas', {}).get(func_id, -1)
-            dias_disponiveis = [d for d in range(6) if d != dia_proibido]
-            
-            if not dias_disponiveis:
-                dias_disponiveis = list(range(6))
-            
-            dia_escolhido = random.choice(dias_disponiveis)
-            folga_por_funcionario[func_id] = dia_escolhido
+            for dia, lista in folgas_por_dia.items():
+                if func_id in lista:
+                    folga_por_funcionario[func_id] = dia
+                    break
     
     return folga_por_funcionario
 
