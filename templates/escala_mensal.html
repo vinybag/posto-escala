@@ -65,29 +65,21 @@
                         <td colspan="{{ semana.dias|length + 2 }}"><strong>Turno da Manha</strong></td>
                     </tr>
                     
-                    {% for func in todos_funcionarios %}
-                        {% set func_horario = namespace(valor='') %}
-                        {% set func_tem_dados = namespace(tem=false) %}
-                        {% for item in escala %}
-                            {% if item.funcionario_id == func.id and item.horario in ['6-13', '6-14', '7-15'] %}
-                                {% set func_horario.valor = item.horario %}
-                                {% set func_tem_dados.tem = true %}
-                            {% endif %}
-                        {% endfor %}
-                        
-                        {% if func_tem_dados.tem %}
+                    {% for horario in ['6-13', '6-14', '7-15'] %}
+                        {% set funcs = semana.funcionarios_por_horario.get(horario, []) %}
+                        {% for func in funcs %}
                         <tr>
                             <td class="horario-cell">
                                 <div class="dropdown">
                                     <button class="btn btn-link dropdown-toggle horario-dropdown" type="button" data-bs-toggle="dropdown">
-                                        <strong>{{ func_horario.valor.replace('-', ' as ') }}</strong>
+                                        <strong>{{ horario.replace('-', ' as ') }}</strong>
                                     </button>
                                     <ul class="dropdown-menu">
                                         <li><h6 class="dropdown-header">Mudar horario:</h6></li>
                                         {% for h in todos_horarios %}
-                                            {% if h != func_horario.valor %}
+                                            {% if h != horario %}
                                             <li>
-                                                <a class="dropdown-item" href="{{ url_for('trocar_horario', func_id=func.id, horario_antigo=func_horario.valor, horario_novo=h, mes_id=mes_escala.id) }}">
+                                                <a class="dropdown-item" href="{{ url_for('trocar_horario', func_id=func.id, horario_antigo=horario, horario_novo=h, mes_id=mes_escala.id) }}">
                                                     {{ h.replace('-', ' as ') }}
                                                 </a>
                                             </li>
@@ -125,15 +117,14 @@
                                             {% if reg %}Trabalho{% else %}FOLGA{% endif %}
                                         </button>
                                         <ul class="dropdown-menu">
-                                            <li><h6 class="dropdown-header">Alterar status:</h6></li>
-                                            <li><a class="dropdown-item" href="{{ url_for('trocar_status', func_id=func.id, dia=dia_info.dia_semana, horario=func_horario.valor, novo_status='trabalho', mes_id=mes_escala.id) }}">Trabalho</a></li>
-                                            <li><a class="dropdown-item" href="{{ url_for('trocar_status', func_id=func.id, dia=dia_info.dia_semana, horario=func_horario.valor, novo_status='folga', mes_id=mes_escala.id) }}">FOLGA</a></li>
+                                            <li><a class="dropdown-item" href="{{ url_for('trocar_status', func_id=func.id, dia=dia_info.dia_semana, horario=horario, novo_status='trabalho', mes_id=mes_escala.id) }}">Trabalho</a></li>
+                                            <li><a class="dropdown-item" href="{{ url_for('trocar_status', func_id=func.id, dia=dia_info.dia_semana, horario=horario, novo_status='folga', mes_id=mes_escala.id) }}">FOLGA</a></li>
                                         </ul>
                                     </div>
                                 </td>
                             {% endfor %}
                         </tr>
-                        {% endif %}
+                        {% endfor %}
                     {% endfor %}
 
                     <!-- TARDE -->
@@ -141,29 +132,21 @@
                         <td colspan="{{ semana.dias|length + 2 }}"><strong>Turno da Tarde</strong></td>
                     </tr>
                     
-                    {% for func in todos_funcionarios %}
-                        {% set func_horario = namespace(valor='') %}
-                        {% set func_tem_dados = namespace(tem=false) %}
-                        {% for item in escala %}
-                            {% if item.funcionario_id == func.id and item.horario in ['13-21', '14-22', '15-22'] %}
-                                {% set func_horario.valor = item.horario %}
-                                {% set func_tem_dados.tem = true %}
-                            {% endif %}
-                        {% endfor %}
-                        
-                        {% if func_tem_dados.tem %}
+                    {% for horario in ['13-21', '14-22', '15-22'] %}
+                        {% set funcs = semana.funcionarios_por_horario.get(horario, []) %}
+                        {% for func in funcs %}
                         <tr>
                             <td class="horario-cell">
                                 <div class="dropdown">
                                     <button class="btn btn-link dropdown-toggle horario-dropdown" type="button" data-bs-toggle="dropdown">
-                                        <strong>{{ func_horario.valor.replace('-', ' as ') }}</strong>
+                                        <strong>{{ horario.replace('-', ' as ') }}</strong>
                                     </button>
                                     <ul class="dropdown-menu">
                                         <li><h6 class="dropdown-header">Mudar horario:</h6></li>
                                         {% for h in todos_horarios %}
-                                            {% if h != func_horario.valor %}
+                                            {% if h != horario %}
                                             <li>
-                                                <a class="dropdown-item" href="{{ url_for('trocar_horario', func_id=func.id, horario_antigo=func_horario.valor, horario_novo=h, mes_id=mes_escala.id) }}">
+                                                <a class="dropdown-item" href="{{ url_for('trocar_horario', func_id=func.id, horario_antigo=horario, horario_novo=h, mes_id=mes_escala.id) }}">
                                                     {{ h.replace('-', ' as ') }}
                                                 </a>
                                             </li>
@@ -201,14 +184,14 @@
                                             {% if reg %}Trabalho{% else %}FOLGA{% endif %}
                                         </button>
                                         <ul class="dropdown-menu">
-                                            <li><a class="dropdown-item" href="{{ url_for('trocar_status', func_id=func.id, dia=dia_info.dia_semana, horario=func_horario.valor, novo_status='trabalho', mes_id=mes_escala.id) }}">Trabalho</a></li>
-                                            <li><a class="dropdown-item" href="{{ url_for('trocar_status', func_id=func.id, dia=dia_info.dia_semana, horario=func_horario.valor, novo_status='folga', mes_id=mes_escala.id) }}">FOLGA</a></li>
+                                            <li><a class="dropdown-item" href="{{ url_for('trocar_status', func_id=func.id, dia=dia_info.dia_semana, horario=horario, novo_status='trabalho', mes_id=mes_escala.id) }}">Trabalho</a></li>
+                                            <li><a class="dropdown-item" href="{{ url_for('trocar_status', func_id=func.id, dia=dia_info.dia_semana, horario=horario, novo_status='folga', mes_id=mes_escala.id) }}">FOLGA</a></li>
                                         </ul>
                                     </div>
                                 </td>
                             {% endfor %}
                         </tr>
-                        {% endif %}
+                        {% endfor %}
                     {% endfor %}
                 </tbody>
             </table>
