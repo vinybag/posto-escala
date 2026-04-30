@@ -398,56 +398,44 @@ def trocar_horario(func_id, horario_antigo, horario_novo, mes_id):
 @app.route('/trocar-status/<int:func_id>/<int:dia>/<string:horario>/<string:novo_status>/<int:mes_id>')
 @login_required
 def trocar_status(func_id, dia, horario, novo_status, mes_id):
+    # Buscar a data correta
     if mes_id > 0:
-        escala = Escala.query.filter_by(
-            funcionario_id=func_id,
-            dia_semana=dia,
-            mes_escala_id=mes_id,
-            ativa=True
-        ).first()
-        
-        # Buscar a data correta da semana
-        mes_escala = MesEscala.query.get(mes_id)
-        # Pegar qualquer escala do mesmo mes para descobrir a data
         referencia = Escala.query.filter_by(mes_escala_id=mes_id, dia_semana=dia).first()
-        if referencia:
-            data = referencia.data
-        else:
-            data = datetime.now().date()
+        data = referencia.data if referencia else datetime.now().date()
     else:
-        escala = Escala.query.filter_by(
+        referencia = Escala.query.filter_by(dia_semana=dia, ativa=True).first()
+        data = referencia.data if referencia else datetime.now().date()
+    
+    # Remover qualquer escala existente nesse dia para esse funcionario
+    if mes_id > 0:
+        Escala.query.filter_by(
+            funcionario_id=func_id,
+            dia_semana=dia,
+            mes_escala_id=mes_id
+        ).delete()
+    else:
+        Escala.query.filter_by(
             funcionario_id=func_id,
             dia_semana=dia,
             ativa=True
-        ).first()
-        
-        referencia = Escala.query.filter_by(dia_semana=dia, ativa=True).first()
-        if referencia:
-            data = referencia.data
-        else:
-            data = datetime.now().date()
+        ).delete()
     
-    if novo_status == 'folga' and escala:
-        db.session.delete(escala)
-        db.session.commit()
+    # Se for trabalho, criar nova escala
+    if novo_status == 'trabalho':
+        nova_escala = Escala(
+            funcionario_id=func_id,
+            dia_semana=dia,
+            horario=horario,
+            data=data,
+            ativa=True,
+            mes_escala_id=mes_id if mes_id > 0 else None
+        )
+        db.session.add(nova_escala)
+        flash('Status alterado para TRABALHO!', 'success')
+    else:
         flash('Status alterado para FOLGA!', 'success')
-    elif novo_status == 'trabalho':
-        if escala:
-            # Ja existe, nao precisa fazer nada
-            flash('Funcionario ja esta trabalhando neste dia!', 'info')
-        else:
-            # Criar nova escala
-            nova_escala = Escala(
-                funcionario_id=func_id,
-                dia_semana=dia,
-                horario=horario,
-                data=data,
-                ativa=True,
-                mes_escala_id=mes_id if mes_id > 0 else None
-            )
-            db.session.add(nova_escala)
-            db.session.commit()
-            flash('Status alterado para TRABALHO!', 'success')
+    
+    db.session.commit()
     
     if mes_id > 0:
         return redirect(url_for('ver_escala_mensal', mes_id=mes_id))
