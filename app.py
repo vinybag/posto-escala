@@ -444,38 +444,6 @@ def importar_escala():
                          funcionarios=funcionarios,
                          dias_semana=dias_semana,
                          todos_horarios=todos_horarios)
-
-@app.route('/trocar-horario/<int:func_id>/<string:horario_antigo>/<string:horario_novo>/<int:mes_id>')
-@login_required
-def trocar_horario(func_id, horario_antigo, horario_novo, mes_id):
-    if mes_id > 0:
-        # Escala mensal
-        escalas = Escala.query.filter_by(
-            funcionario_id=func_id,
-            horario=horario_antigo,
-            mes_escala_id=mes_id,
-            ativa=True
-        ).all()
-    else:
-        # Escala semanal
-        escalas = Escala.query.filter_by(
-            funcionario_id=func_id,
-            horario=horario_antigo,
-            ativa=True
-        ).all()
-    
-    for escala in escalas:
-        escala.horario = horario_novo
-    
-    db.session.commit()
-    
-    func = Funcionario.query.get(func_id)
-    flash(f'Horario de {func.nome} alterado para {horario_novo.replace("-", " as ")}!', 'success')
-    
-    if mes_id > 0:
-        return redirect(url_for('ver_escala_mensal', mes_id=mes_id))
-    else:
-        return redirect(url_for('ver_escala'))
     
 @app.route('/trocar-status/<int:func_id>/<int:dia>/<string:horario>/<string:novo_status>/<int:mes_id>')
 @login_required
