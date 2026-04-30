@@ -50,6 +50,21 @@ def gerar_escala_mensal(mes=None, ano=None):
         somente_manha, somente_tarde, misto, historico
     )
     
+    # Garantir que TODOS os funcionarios ativos estejam incluidos
+    todos_ids = {f.id for f in funcionarios}
+    alocados_ids = {f.id for f in turma_manha + turma_tarde}
+    faltantes = todos_ids - alocados_ids
+    
+    for func_id in faltantes:
+        func = next(f for f in funcionarios if f.id == func_id)
+        if len(turma_manha) <= len(turma_tarde):
+            turma_manha.append(func)
+        else:
+            turma_tarde.append(func)
+    
+    random.shuffle(turma_manha)
+    random.shuffle(turma_tarde)
+    
     # Alocar horarios fixos
     alocacao_fixa = {}
     
@@ -68,13 +83,13 @@ def gerar_escala_mensal(mes=None, ano=None):
     
     # Encontrar a primeira segunda-feira (pode ser do mes anterior)
     data_atual = primeiro_dia
-    while data_atual.weekday() != 0:  # 0 = segunda
+    while data_atual.weekday() != 0:
         data_atual = data_atual - timedelta(days=1)
     primeira_segunda = data_atual
     
     # Encontrar o ultimo domingo (pode ser do mes seguinte)
     data_atual = ultimo_dia
-    while data_atual.weekday() != 6:  # 6 = domingo
+    while data_atual.weekday() != 6:
         data_atual = data_atual + timedelta(days=1)
     ultimo_domingo = data_atual
     
