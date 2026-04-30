@@ -89,11 +89,28 @@
                         {% for dia in range(7) %}
                             {% set registro = escala | selectattr('funcionario_id', 'equalto', item.funcionario_id) | selectattr('dia_semana', 'equalto', dia) | list %}
                             <td class="text-center status-cell">
-                                {% if registro %}
-                                    <span class="badge bg-success">Trabalho</span>
-                                {% else %}
-                                    <span class="badge bg-warning text-dark">FOLGA</span>
-                                {% endif %}
+                                <div class="dropdown">
+                                    <button class="btn btn-sm dropdown-toggle status-dropdown {% if registro %}btn-success{% else %}btn-warning{% endif %}" type="button" data-bs-toggle="dropdown">
+                                        {% if registro %}
+                                            Trabalho
+                                        {% else %}
+                                            FOLGA
+                                        {% endif %}
+                                    </button>
+                                    <ul class="dropdown-menu">
+                                        <li><h6 class="dropdown-header">Alterar status:</h6></li>
+                                        <li>
+                                            <a class="dropdown-item" href="{{ url_for('trocar_status', func_id=item.funcionario_id, dia=dia, horario=item.horario, novo_status='trabalho', mes_id=0) }}">
+                                                Trabalho
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item" href="{{ url_for('trocar_status', func_id=item.funcionario_id, dia=dia, horario=item.horario, novo_status='folga', mes_id=0) }}">
+                                                FOLGA
+                                            </a>
+                                        </li>
+                                    </ul>
+                                </div>
                             </td>
                         {% endfor %}
                     </tr>
@@ -152,32 +169,36 @@
                         </td>
                         
                         {% for dia in range(7) %}
-    {% set registro = escala | selectattr('funcionario_id', 'equalto', item.funcionario_id) | selectattr('dia_semana', 'equalto', dia) | list %}
-    <td class="text-center status-cell">
-        <div class="dropdown">
-            <button class="btn btn-sm dropdown-toggle status-dropdown {% if registro %}btn-success{% else %}btn-warning{% endif %}" type="button" data-bs-toggle="dropdown">
-                {% if registro %}
-                    Trabalho
-                {% else %}
-                    FOLGA
-                {% endif %}
-            </button>
-            <ul class="dropdown-menu">
-                <li><h6 class="dropdown-header">Alterar status:</h6></li>
-                <li>
-                    <a class="dropdown-item" href="{{ url_for('trocar_status', func_id=item.funcionario_id, dia=dia, horario=horario, novo_status='trabalho', mes_id=0) }}">
-                        Trabalho
-                    </a>
-                </li>
-                <li>
-                    <a class="dropdown-item" href="{{ url_for('trocar_status', func_id=item.funcionario_id, dia=dia, horario=horario, novo_status='folga', mes_id=0) }}">
-                        FOLGA
-                    </a>
-                </li>
-            </ul>
-        </div>
-    </td>
-{% endfor %}
+                            {% set registro = escala | selectattr('funcionario_id', 'equalto', item.funcionario_id) | selectattr('dia_semana', 'equalto', dia) | list %}
+                            <td class="text-center status-cell">
+                                <div class="dropdown">
+                                    <button class="btn btn-sm dropdown-toggle status-dropdown {% if registro %}btn-success{% else %}btn-warning{% endif %}" type="button" data-bs-toggle="dropdown">
+                                        {% if registro %}
+                                            Trabalho
+                                        {% else %}
+                                            FOLGA
+                                        {% endif %}
+                                    </button>
+                                    <ul class="dropdown-menu">
+                                        <li><h6 class="dropdown-header">Alterar status:</h6></li>
+                                        <li>
+                                            <a class="dropdown-item" href="{{ url_for('trocar_status', func_id=item.funcionario_id, dia=dia, horario=item.horario, novo_status='trabalho', mes_id=0) }}">
+                                                Trabalho
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item" href="{{ url_for('trocar_status', func_id=item.funcionario_id, dia=dia, horario=item.horario, novo_status='folga', mes_id=0) }}">
+                                                FOLGA
+                                            </a>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </td>
+                        {% endfor %}
+                    </tr>
+                    {% endif %}
+                {% endfor %}
+            {% endfor %}
         </tbody>
     </table>
 </div>
