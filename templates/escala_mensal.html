@@ -99,7 +99,7 @@
                                         {% for outro_func in todos_funcionarios %}
                                             {% if outro_func.id != func.id %}
                                             <li>
-                                                <a class="dropdown-item" href="{{ url_for('trocar_escala', func1=func.id, func2=outro_func.id, dia=-1) }}">
+                                                <a class="dropdown-item" href="{{ url_for('trocar_escala', func1=func.id, func2=outro_func.id, dia=-1, mes_id=mes_escala.id) }}">
                                                     {{ outro_func.nome }}
                                                 </a>
                                             </li>

@@ -251,6 +251,7 @@ def trocar_escala():
     func1_id = request.args.get('func1', type=int)
     func2_id = request.args.get('func2', type=int)
     dia = request.args.get('dia', -1, type=int)
+    mes_id = request.args.get('mes_id', 0, type=int)
     
     escalas_func1 = Escala.query.filter_by(funcionario_id=func1_id, ativa=True).all()
     escalas_func2 = Escala.query.filter_by(funcionario_id=func2_id, ativa=True).all()
@@ -258,27 +259,18 @@ def trocar_escala():
     if dia == -1:
         for escala in escalas_func1:
             escala.funcionario_id = func2_id
-        
         for escala in escalas_func2:
             escala.funcionario_id = func1_id
-        
         db.session.commit()
         
         func1 = Funcionario.query.get(func1_id)
         func2 = Funcionario.query.get(func2_id)
         flash(f'Troca completa: {func1.nome} ⇄ {func2.nome}', 'success')
-    else:
-        escala_func1 = Escala.query.filter_by(funcionario_id=func1_id, dia_semana=dia, ativa=True).first()
-        escala_func2 = Escala.query.filter_by(funcionario_id=func2_id, dia_semana=dia, ativa=True).first()
-        
-        if escala_func1 and escala_func2:
-            horario_temp = escala_func1.horario
-            escala_func1.horario = escala_func2.horario
-            escala_func2.horario = horario_temp
-            db.session.commit()
-            flash(f'Troca realizada no dia!', 'success')
     
-    return redirect(url_for('ver_escala'))
+    if mes_id > 0:
+        return redirect(url_for('ver_escala_mensal', mes_id=mes_id))
+    else:
+        return redirect(url_for('ver_escala'))
 
 @app.route('/escalas')
 @login_required
