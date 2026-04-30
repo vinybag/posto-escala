@@ -3,7 +3,7 @@
 <div class="row justify-content-center">
     <div class="col-md-6">
         <div class="card">
-            <div class="card-header bg-warning">
+            <div class="card-header">
                 <h5>Editar Funcionario: {{ funcionario.nome }}</h5>
             </div>
             <div class="card-body">
@@ -34,7 +34,7 @@
                             <option value="nao" {% if not funcionario.pode_folgar_domingo %}selected{% endif %}>Nao</option>
                         </select>
                     </div>
-                    <button type="submit" class="btn btn-warning">Salvar Alteracoes</button>
+                    <button type="submit" class="btn btn-secondary">Salvar Alteracoes</button>
                     <a href="{{ url_for('listar_funcionarios') }}" class="btn btn-secondary">Cancelar</a>
                 </form>
             </div>

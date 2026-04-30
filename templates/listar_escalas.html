@@ -3,20 +3,20 @@
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h2>Gerenciar Escalas</h2>
     <div>
-        <a href="{{ url_for('gerar_escala_mensal') }}" class="btn btn-success me-2">+ Nova Escala Mensal</a>
-        <a href="{{ url_for('gerar_escala') }}" class="btn btn-primary me-2">+ Nova Escala Semanal</a>
+        <a href="{{ url_for('gerar_escala_mensal') }}" class="btn btn-secondary me-2">+ Nova Escala Mensal</a>
+        <a href="{{ url_for('gerar_escala') }}" class="btn btn-secondary me-2">+ Nova Escala Semanal</a>
         <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">Voltar</a>
     </div>
 </div>
 
 <!-- Escala Semanal Atual -->
 <div class="card mb-4">
-    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+    <div class="card-header d-flex justify-content-between align-items-center">
         <h5 class="mb-0">Escala Semanal</h5>
         <div>
-            <a href="{{ url_for('ver_escala') }}" class="btn btn-light btn-sm me-2">Visualizar</a>
+            <a href="{{ url_for('ver_escala') }}" class="btn btn-sm btn-secondary me-2">Visualizar</a>
             <a href="{{ url_for('excluir_escala_semanal') }}" 
-               class="btn btn-danger btn-sm"
+               class="btn btn-sm btn-danger"
                onclick="return confirm('Excluir escala semanal atual?')">
                 Excluir
             </a>
@@ -33,7 +33,7 @@
 
 <!-- Escalas Mensais -->
 <div class="card">
-    <div class="card-header bg-info text-white">
+    <div class="card-header">
         <h5 class="mb-0">Escalas Mensais</h5>
     </div>
     <div class="card-body">
@@ -58,24 +58,18 @@
                                 / {{ mes.ano }}
                             </strong>
                             {% if mes.mes == current_month and mes.ano == current_year %}
-                            <span class="badge bg-success">Atual</span>
+                            <span class="badge bg-secondary">Atual</span>
                             {% endif %}
                         </td>
-                        <td>
-    {% if mes.data_criacao %}
-        {{ (mes.data_criacao + timedelta(hours=-3)).strftime('%d/%m/%Y %H:%M') }}
-    {% else %}
-        -
-    {% endif %}
-</td>
+                        <td>{{ mes.data_criacao.strftime('%d/%m/%Y %H:%M') if mes.data_criacao else '-' }}</td>
                         <td>{{ escalas_mensais_semanas.get(mes.id, 0) }} semana(s)</td>
                         <td>
                             <div class="btn-group">
                                 <a href="{{ url_for('ver_escala_mensal', mes_id=mes.id) }}" 
-                                   class="btn btn-sm btn-primary">Ver</a>
+                                   class="btn btn-sm btn-secondary">Ver</a>
                                 <a href="{{ url_for('excluir_escala_mensal', mes_id=mes.id) }}" 
                                    class="btn btn-sm btn-danger"
-                                   onclick="return confirm('Excluir escala de {{ ['Janeiro', 'Fevereiro', 'Marco', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'][mes.mes-1] }}/{{ mes.ano }}?')">
+                                   onclick="return confirm('Excluir escala?')">
                                     Excluir
                                 </a>
                             </div>
