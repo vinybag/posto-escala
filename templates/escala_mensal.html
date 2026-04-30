@@ -1,12 +1,12 @@
 {% extends "base.html" %}
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
-    <h2>Escala - {{ ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 
+    <h2>Escala - {{ ['Janeiro', 'Fevereiro', 'Marco', 'Abril', 'Maio', 'Junho', 
                       'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'][mes_escala.mes-1] }} 
         / {{ mes_escala.ano }}</h2>
     <div>
         <div class="btn-group me-2">
-            <button type="button" class="btn btn-info dropdown-toggle" data-bs-toggle="dropdown">
+            <button type="button" class="btn btn-secondary dropdown-toggle" data-bs-toggle="dropdown">
                 Selecionar Mes
             </button>
             <ul class="dropdown-menu">
@@ -22,7 +22,7 @@
             </ul>
         </div>
         
-        <a href="{{ url_for('gerar_escala_mensal') }}" class="btn btn-success me-2">+ Nova Escala</a>
+        <a href="{{ url_for('gerar_escala_mensal') }}" class="btn btn-secondary me-2">+ Nova Escala</a>
         <a href="{{ url_for('excluir_escala_mensal', mes_id=mes_escala.id) }}" 
            class="btn btn-danger me-2"
            onclick="return confirm('Excluir escala?')">
