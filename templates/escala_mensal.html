@@ -174,15 +174,32 @@
                                 </td>
                                 
                                 {% for dia_info in semana.dias %}
-                                    {% set reg = semana.escalas_por_dia.get((item.funcionario_id, dia_info.dia_semana)) %}
-                                    <td class="text-center">
-                                        {% if reg %}
-                                            <span class="badge bg-success">Trabalho</span>
-                                        {% else %}
-                                            <span class="badge bg-warning text-dark">FOLGA</span>
-                                        {% endif %}
-                                    </td>
-                                {% endfor %}
+    {% set reg = semana.escalas_por_dia.get((item.funcionario_id, dia_info.dia_semana)) %}
+    <td class="text-center status-cell">
+        <div class="dropdown">
+            <button class="btn btn-sm dropdown-toggle status-dropdown {% if reg %}btn-success{% else %}btn-warning{% endif %}" type="button" data-bs-toggle="dropdown">
+                {% if reg %}
+                    Trabalho
+                {% else %}
+                    FOLGA
+                {% endif %}
+            </button>
+            <ul class="dropdown-menu">
+                <li><h6 class="dropdown-header">Alterar status:</h6></li>
+                <li>
+                    <a class="dropdown-item" href="{{ url_for('trocar_status', func_id=item.funcionario_id, dia=dia_info.dia_semana, horario=horario, novo_status='trabalho', mes_id=mes_escala.id) }}">
+                        Trabalho
+                    </a>
+                </li>
+                <li>
+                    <a class="dropdown-item" href="{{ url_for('trocar_status', func_id=item.funcionario_id, dia=dia_info.dia_semana, horario=horario, novo_status='folga', mes_id=mes_escala.id) }}">
+                        FOLGA
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </td>
+{% endfor %}
                             </tr>
                             {% endif %}
                         {% endfor %}
