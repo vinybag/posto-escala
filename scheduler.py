@@ -65,7 +65,7 @@ def gerar_escala_mensal(mes=None, ano=None):
     random.shuffle(turma_manha)
     random.shuffle(turma_tarde)
     
-    # Alocar horarios fixos
+    # Alocar horarios - cada funcionario recebe um horario
     alocacao_fixa = {}
     
     for i, func in enumerate(turma_manha):
