@@ -220,6 +220,18 @@ def _distribuir_turnos(somente_manha, somente_tarde, misto, historico):
             else:
                 turma_tarde.append(func)
     
+    # Garantir que TODOS os mistos foram alocados
+    todos_mistos_ids = {f.id for f in misto}
+    alocados_mistos = {f.id for f in turma_manha + turma_tarde if f in misto}
+    faltantes_mistos = todos_mistos_ids - alocados_mistos
+    
+    for func_id in faltantes_mistos:
+        func = next(f for f in misto if f.id == func_id)
+        if len(turma_manha) <= len(turma_tarde):
+            turma_manha.append(func)
+        else:
+            turma_tarde.append(func)
+    
     return turma_manha, turma_tarde
 
 
