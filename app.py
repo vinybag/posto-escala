@@ -481,7 +481,6 @@ def trocar_horario(func_id, horario_antigo, horario_novo, mes_id):
 @login_required
 def trocar_status(func_id, dia, horario, novo_status, mes_id):
     if mes_id > 0:
-        # Escala mensal
         escala = Escala.query.filter_by(
             funcionario_id=func_id,
             dia_semana=dia,
@@ -489,7 +488,6 @@ def trocar_status(func_id, dia, horario, novo_status, mes_id):
             ativa=True
         ).first()
     else:
-        # Escala semanal
         escala = Escala.query.filter_by(
             funcionario_id=func_id,
             dia_semana=dia,
@@ -497,11 +495,9 @@ def trocar_status(func_id, dia, horario, novo_status, mes_id):
         ).first()
     
     if novo_status == 'folga' and escala:
-        # Remover escala (vira folga)
         db.session.delete(escala)
         flash('Status alterado para FOLGA!', 'success')
     elif novo_status == 'trabalho' and not escala:
-        # Criar escala (vira trabalho)
         if mes_id > 0:
             mes_escala = MesEscala.query.get(mes_id)
             data = mes_escala.data_criacao.date() if mes_escala else datetime.now().date()
@@ -524,4 +520,145 @@ def trocar_status(func_id, dia, horario, novo_status, mes_id):
     if mes_id > 0:
         return redirect(url_for('ver_escala_mensal', mes_id=mes_id))
     else:
-        return redirect(url_for('ver_escala'))        
+        return redirect(url_for('ver_escala'))
+
+
+@app.route('/trocar-horario/<int:func_id>/<string:horario_antigo>/<string:horario_novo>/<int:mes_id>')
+@login_required
+def trocar_horario(func_id, horario_antigo, horario_novo, mes_id):
+    if mes_id > 0:
+        escalas = Escala.query.filter_by(
+            funcionario_id=func_id,
+            horario=horario_antigo,
+            mes_escala_id=mes_id,
+            ativa=True
+        ).all()
+    else:
+        escalas = Escala.query.filter_by(
+            funcionario_id=func_id,
+            horario=horario_antigo,
+            ativa=True
+        ).all()
+    
+    for escala in escalas:
+        escala.horario = horario_novo
+    
+    db.session.commit()
+    
+    func = Funcionario.query.get(func_id)
+    flash(f'Horario de {func.nome} alterado para {horario_novo.replace("-", " as ")}!', 'success')
+    
+    if mes_id > 0:
+        return redirect(url_for('ver_escala_mensal', mes_id=mes_id))
+    else:
+        return redirect(url_for('ver_escala'))
+
+
+@app.route('/importar-escala', methods=['GET', 'POST'])
+@login_required
+def importar_escala():
+    if request.method == 'POST':
+        data_inicio = request.form.get('data_inicio')
+        
+        try:
+            data_inicio = datetime.strptime(data_inicio, '%Y-%m-%d').date()
+        except:
+            flash('Data invalida! Use o formato AAAA-MM-DD', 'error')
+            return redirect(url_for('importar_escala'))
+        
+        while data_inicio.weekday() != 0:
+            data_inicio = data_inicio - timedelta(days=1)
+        
+        mes_escala = MesEscala(
+            mes=data_inicio.month,
+            ano=data_inicio.year,
+            ativo=True
+        )
+        db.session.add(mes_escala)
+        db.session.flush()
+        
+        for i in range(20):
+            func_id = request.form.get(f'funcionario_{i}')
+            horario = request.form.get(f'horario_{i}')
+            
+            if not func_id or not horario:
+                continue
+            
+            func_id = int(func_id)
+            
+            for dia_offset in range(7):
+                data = data_inicio + timedelta(days=dia_offset)
+                dia_semana = data.weekday()
+                status = request.form.get(f'status_{i}_{dia_offset}', '')
+                
+                if status == 'trabalho':
+                    escala = Escala(
+                        funcionario_id=func_id,
+                        mes_escala_id=mes_escala.id,
+                        dia_semana=dia_semana,
+                        horario=horario,
+                        data=data,
+                        ativa=True
+                    )
+                    db.session.add(escala)
+        
+        db.session.commit()
+        flash('Escala importada com sucesso!', 'success')
+        return redirect(url_for('ver_escala_mensal', mes_id=mes_escala.id))
+    
+    funcionarios = Funcionario.query.filter_by(ativo=True).all()
+    dias_semana = ['SEG', 'TER', 'QUA', 'QUI', 'SEX', 'SAB', 'DOM']
+    todos_horarios = ['6-13', '6-14', '7-15', '13-21', '14-22', '15-22']
+    
+    return render_template('importar_escala.html', 
+                         funcionarios=funcionarios,
+                         dias_semana=dias_semana,
+                         todos_horarios=todos_horarios)
+
+
+# ============================================
+# ROTA DE VERIFICACAO
+# ============================================
+@app.route('/verificar-funcionarios')
+@login_required
+def verificar_funcionarios():
+    funcs = Funcionario.query.filter_by(ativo=True).all()
+    escala = Escala.query.filter_by(ativa=True).all()
+    funcs_na_escala = set(e.funcionario_id for e in escala)
+    faltantes = set(f.id for f in funcs) - funcs_na_escala
+    
+    resultado = f"<h2>Total ativos: {len(funcs)}</h2>"
+    resultado += f"<h2>Na escala: {len(funcs_na_escala)}</h2>"
+    resultado += f"<h2>Faltantes: {len(faltantes)}</h2><ul>"
+    for fid in faltantes:
+        f = Funcionario.query.get(fid)
+        resultado += f"<li>FALTANDO: {f.nome} (pref: {f.preferencia_turno})</li>"
+    resultado += "</ul>"
+    return resultado
+
+
+# ============================================
+# FUNCOES AUXILIARES
+# ============================================
+def _obter_meses_disponiveis():
+    """Retorna lista de meses para o dropdown"""
+    hoje = datetime.now()
+    meses = []
+    for i in range(12):
+        if hoje.month + i > 12:
+            mes = hoje.month + i - 12
+            ano = hoje.year + 1
+        else:
+            mes = hoje.month + i
+            ano = hoje.year
+        meses.append((mes, ano))
+    return meses
+
+
+@app.context_processor
+def utility_processor():
+    return dict(timedelta=timedelta)
+
+
+if __name__ == '__main__':
+    app.run(debug=True)
