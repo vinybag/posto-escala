@@ -144,7 +144,6 @@ def ver_escala():
     escala = Escala.query.filter_by(ativa=True).order_by(Escala.horario, Escala.funcionario_id, Escala.dia_semana).all()
     todos_funcionarios = Funcionario.query.filter_by(ativo=True).all()
     todos_horarios = ['6-13', '6-14', '7-15', '13-21', '14-22', '15-22']
-    
     return render_template('escala.html', escala=escala, todos_funcionarios=todos_funcionarios, todos_horarios=todos_horarios)
 
 @app.route('/gerar-escala-mensal', methods=['GET', 'POST'])

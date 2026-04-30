@@ -233,7 +233,9 @@ def _atribuir_folgas_semana_mensal(alocacao_fixa, historico, domingo_no_mes):
 
 
 def gerar_escala_semanal():
+    """Gera escala para a proxima semana"""
     funcionarios = Funcionario.query.filter_by(ativo=True).all()
+    
     if not funcionarios:
         return False
     
@@ -243,13 +245,8 @@ def gerar_escala_semanal():
         dias_ate_segunda = 7
     segunda = hoje + timedelta(days=dias_ate_segunda)
     
-    mes, ano = segunda.month, segunda.year
-    
-    mes_escala = MesEscala.query.filter_by(mes=mes, ano=ano).first()
-    if not mes_escala:
-        mes_escala = MesEscala(mes=mes, ano=ano, ativo=True)
-        db.session.add(mes_escala)
-        db.session.flush()
+    mes = segunda.month
+    ano = segunda.year
     
     historico = _carregar_historico(funcionarios, mes, ano)
     
@@ -274,6 +271,9 @@ def gerar_escala_semanal():
         else:
             turma_tarde.append(func)
     
+    random.shuffle(turma_manha)
+    random.shuffle(turma_tarde)
+    
     alocacao_fixa = {}
     for i, func in enumerate(turma_manha):
         alocacao_fixa[func.id] = HORARIOS_MANHA[i % len(HORARIOS_MANHA)]
@@ -284,14 +284,16 @@ def gerar_escala_semanal():
     
     for dia in range(7):
         data = segunda + timedelta(days=dia)
+        
         for func_id in alocacao_fixa:
             if folga_por_funcionario.get(func_id) == dia:
                 continue
+            
+            horario = alocacao_fixa[func_id]
             escala = Escala(
                 funcionario_id=func_id,
-                mes_escala_id=mes_escala.id,
                 dia_semana=dia,
-                horario=alocacao_fixa[func_id],
+                horario=horario,
                 data=data,
                 ativa=True
             )
