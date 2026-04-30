@@ -21,79 +21,42 @@
         <table class="table table-bordered escala-table">
             <thead class="table-dark">
                 <tr>
-                    <th>Horario</th>
                     <th>Funcionario</th>
-                    {% set dias_semana = ['SEG', 'TER', 'QUA', 'QUI', 'SEX', 'SAB', 'DOM'] %}
+                    <th>Horario</th>
                     {% for dia in dias_semana %}
                     <th class="text-center">{{ dia }}</th>
                     {% endfor %}
                 </tr>
             </thead>
             <tbody>
-                <!-- MANHA -->
-                <tr class="turno-header">
-                    <td colspan="9"><strong>Turno da Manha</strong></td>
-                </tr>
-                
-                {% set horarios_manha = ['6-13', '6-14', '7-15'] %}
-                {% for horario in horarios_manha %}
-                    {% for linha in range(4) %}
-                    <tr>
-                        {% if loop.first %}
-                        <td class="horario-cell" rowspan="4"><strong>{{ horario.replace('-', ' as ') }}</strong></td>
-                        {% endif %}
-                        <td class="funcionario-cell">
-                            <select class="form-select form-select-sm funcionario-select" name="manha_{{ horario }}_{{ linha }}">
-                                <option value="">-- Vazio --</option>
-                                {% for func in funcionarios %}
-                                <option value="{{ func.id }}">{{ func.nome }}</option>
-                                {% endfor %}
-                            </select>
-                        </td>
-                        {% for dia in range(7) %}
-                        <td class="text-center">
-                            <select class="form-select form-select-sm" name="status_manha_{{ horario }}_{{ linha }}_{{ dia }}">
-                                <option value="">--</option>
-                                <option value="trabalho">Trabalho</option>
-                                <option value="folga">FOLGA</option>
-                            </select>
-                        </td>
-                        {% endfor %}
-                    </tr>
+                {% for i in range(20) %}
+                <tr>
+                    <td>
+                        <select class="form-select form-select-sm" name="funcionario_{{ i }}">
+                            <option value="">-- Vazio --</option>
+                            {% for func in funcionarios %}
+                            <option value="{{ func.id }}">{{ func.nome }}</option>
+                            {% endfor %}
+                        </select>
+                    </td>
+                    <td>
+                        <select class="form-select form-select-sm" name="horario_{{ i }}">
+                            <option value="">-- Horario --</option>
+                            {% for h in todos_horarios %}
+                            <option value="{{ h }}">{{ h.replace('-', ' as ') }}</option>
+                            {% endfor %}
+                        </select>
+                    </td>
+                    {% for dia in range(7) %}
+                    <td class="text-center">
+                        <select class="form-select form-select-sm" name="status_{{ i }}_{{ dia }}">
+                            <option value="">--</option>
+                            <option value="trabalho">Trabalho</option>
+                            <option value="folga">FOLGA</option>
+                        </select>
+                    </td>
                     {% endfor %}
-                {% endfor %}
-
-                <!-- TARDE -->
-                <tr class="turno-header">
-                    <td colspan="9"><strong>Turno da Tarde</strong></td>
                 </tr>
-                
-                {% set horarios_tarde = ['13-21', '14-22', '15-22'] %}
-                {% for horario in horarios_tarde %}
-                    {% for linha in range(4) %}
-                    <tr>
-                        {% if loop.first %}
-                        <td class="horario-cell" rowspan="4"><strong>{{ horario.replace('-', ' as ') }}</strong></td>
-                        {% endif %}
-                        <td class="funcionario-cell">
-                            <select class="form-select form-select-sm" name="tarde_{{ horario }}_{{ linha }}">
-                                <option value="">-- Vazio --</option>
-                                {% for func in funcionarios %}
-                                <option value="{{ func.id }}">{{ func.nome }}</option>
-                                {% endfor %}
-                            </select>
-                        </td>
-                        {% for dia in range(7) %}
-                        <td class="text-center">
-                            <select class="form-select form-select-sm" name="status_tarde_{{ horario }}_{{ linha }}_{{ dia }}">
-                                <option value="">--</option>
-                                <option value="trabalho">Trabalho</option>
-                                <option value="folga">FOLGA</option>
-                            </select>
-                        </td>
-                        {% endfor %}
-                    </tr>
-                    {% endfor %}
                 {% endfor %}
             </tbody>
         </table>
