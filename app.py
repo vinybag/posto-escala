@@ -399,6 +399,10 @@ def importar_escala():
             flash('Data invalida! Use o formato AAAA-MM-DD', 'error')
             return redirect(url_for('importar_escala'))
         
+        # Ajustar para segunda-feira
+        while data_inicio.weekday() != 0:
+            data_inicio = data_inicio - timedelta(days=1)
+        
         # Criar mes_escala para essa semana
         mes_escala = MesEscala(
             mes=data_inicio.month,
@@ -408,41 +412,54 @@ def importar_escala():
         db.session.add(mes_escala)
         db.session.flush()
         
-        # Processar 7 dias (SEG a DOM)
-        funcionarios = {f.nome.strip().lower(): f for f in Funcionario.query.all()}
-        
+        # Processar cada dia da semana
         for dia_offset in range(7):
             data = data_inicio + timedelta(days=dia_offset)
             dia_semana = data.weekday()
             
-            # Pegar os funcionarios do formulario para este dia
-            for horario in ['6-13', '6-14', '7-15', '13-21', '14-22', '15-22']:
-                campo = f'dia{dia_offset}_{horario}'
-                nomes = request.form.get(campo, '')
-                
-                if nomes.strip():
-                    for nome in nomes.split(','):
-                        nome = nome.strip().lower()
-                        if nome in funcionarios:
-                            escala = Escala(
-                                funcionario_id=funcionarios[nome].id,
-                                mes_escala_id=mes_escala.id,
-                                dia_semana=dia_semana,
-                                horario=horario,
-                                data=data,
-                                ativa=True
-                            )
-                            db.session.add(escala)
+            # Processar manha
+            for horario in ['6-13', '6-14', '7-15']:
+                for linha in range(4):
+                    func_id = request.form.get(f'manha_{horario}_{linha}')
+                    status_key = f'status_manha_{horario}_{linha}_{dia_offset}'
+                    status = request.form.get(status_key, '')
+                    
+                    if func_id and status == 'trabalho':
+                        escala = Escala(
+                            funcionario_id=int(func_id),
+                            mes_escala_id=mes_escala.id,
+                            dia_semana=dia_semana,
+                            horario=horario,
+                            data=data,
+                            ativa=True
+                        )
+                        db.session.add(escala)
+            
+            # Processar tarde
+            for horario in ['13-21', '14-22', '15-22']:
+                for linha in range(4):
+                    func_id = request.form.get(f'tarde_{horario}_{linha}')
+                    status_key = f'status_tarde_{horario}_{linha}_{dia_offset}'
+                    status = request.form.get(status_key, '')
+                    
+                    if func_id and status == 'trabalho':
+                        escala = Escala(
+                            funcionario_id=int(func_id),
+                            mes_escala_id=mes_escala.id,
+                            dia_semana=dia_semana,
+                            horario=horario,
+                            data=data,
+                            ativa=True
+                        )
+                        db.session.add(escala)
         
         db.session.commit()
         flash('Escala importada com sucesso!', 'success')
         return redirect(url_for('ver_escala_mensal', mes_id=mes_escala.id))
     
     funcionarios = Funcionario.query.filter_by(ativo=True).all()
-    horarios = ['6-13', '6-14', '7-15', '13-21', '14-22', '15-22']
     dias_semana = ['SEG', 'TER', 'QUA', 'QUI', 'SEX', 'SAB', 'DOM']
     
     return render_template('importar_escala.html', 
                          funcionarios=funcionarios,
-                         horarios=horarios,
                          dias_semana=dias_semana)    
