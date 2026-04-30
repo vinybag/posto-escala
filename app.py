@@ -253,8 +253,12 @@ def trocar_escala():
     dia = request.args.get('dia', -1, type=int)
     mes_id = request.args.get('mes_id', 0, type=int)
     
-    escalas_func1 = Escala.query.filter_by(funcionario_id=func1_id, ativa=True).all()
-    escalas_func2 = Escala.query.filter_by(funcionario_id=func2_id, ativa=True).all()
+    if mes_id > 0:
+        escalas_func1 = Escala.query.filter_by(funcionario_id=func1_id, mes_escala_id=mes_id, ativa=True).all()
+        escalas_func2 = Escala.query.filter_by(funcionario_id=func2_id, mes_escala_id=mes_id, ativa=True).all()
+    else:
+        escalas_func1 = Escala.query.filter_by(funcionario_id=func1_id, ativa=True).all()
+        escalas_func2 = Escala.query.filter_by(funcionario_id=func2_id, ativa=True).all()
     
     if dia == -1:
         for escala in escalas_func1:
@@ -398,37 +402,19 @@ def trocar_horario(func_id, horario_antigo, horario_novo, mes_id):
 @app.route('/trocar-status/<int:func_id>/<int:dia>/<string:horario>/<string:novo_status>/<int:mes_id>')
 @login_required
 def trocar_status(func_id, dia, horario, novo_status, mes_id):
-    # Buscar a data correta
     if mes_id > 0:
         referencia = Escala.query.filter_by(mes_escala_id=mes_id, dia_semana=dia).first()
         data = referencia.data if referencia else datetime.now().date()
+        Escala.query.filter_by(funcionario_id=func_id, dia_semana=dia, mes_escala_id=mes_id).delete()
     else:
         referencia = Escala.query.filter_by(dia_semana=dia, ativa=True).first()
         data = referencia.data if referencia else datetime.now().date()
+        Escala.query.filter_by(funcionario_id=func_id, dia_semana=dia, ativa=True).delete()
     
-    # Remover qualquer escala existente nesse dia para esse funcionario
-    if mes_id > 0:
-        Escala.query.filter_by(
-            funcionario_id=func_id,
-            dia_semana=dia,
-            mes_escala_id=mes_id
-        ).delete()
-    else:
-        Escala.query.filter_by(
-            funcionario_id=func_id,
-            dia_semana=dia,
-            ativa=True
-        ).delete()
-    
-    # Se for trabalho, criar nova escala
     if novo_status == 'trabalho':
         nova_escala = Escala(
-            funcionario_id=func_id,
-            dia_semana=dia,
-            horario=horario,
-            data=data,
-            ativa=True,
-            mes_escala_id=mes_id if mes_id > 0 else None
+            funcionario_id=func_id, dia_semana=dia, horario=horario, data=data,
+            ativa=True, mes_escala_id=mes_id if mes_id > 0 else None
         )
         db.session.add(nova_escala)
         flash('Status alterado para TRABALHO!', 'success')
