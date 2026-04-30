@@ -147,22 +147,12 @@ def gerar_escala():
 @app.route('/escala')
 @login_required
 def ver_escala():
-    # Buscar a escala do mes atual
-    hoje = datetime.now().date()
-    mes_atual = hoje.month
-    ano_atual = hoje.year
+    # Mostrar a escala semanal ativa
+    escala = Escala.query.filter_by(ativa=True).order_by(Escala.horario, Escala.funcionario_id, Escala.dia_semana).all()
+    todos_funcionarios = Funcionario.query.filter_by(ativo=True).all()
+    todos_horarios = ['6-13', '6-14', '7-15', '13-21', '14-22', '15-22']
     
-    mes_escala = MesEscala.query.filter_by(mes=mes_atual, ano=ano_atual).first()
-    
-    # Se nao tem do mes atual, pega a mais recente
-    if not mes_escala:
-        mes_escala = MesEscala.query.order_by(MesEscala.id.desc()).first()
-    
-    if mes_escala:
-        return redirect(url_for('ver_escala_mensal', mes_id=mes_escala.id))
-    else:
-        flash('Nenhuma escala encontrada. Gere uma escala mensal!', 'warning')
-        return redirect(url_for('gerar_escala_mensal'))
+    return render_template('escala.html', escala=escala, todos_funcionarios=todos_funcionarios, todos_horarios=todos_horarios)
 
 @app.route('/gerar-escala-mensal', methods=['GET', 'POST'])
 @login_required
@@ -194,6 +184,7 @@ def ver_escala_mensal(mes_id):
     
     todos_funcionarios = Funcionario.query.filter_by(ativo=True).all()
     meses_disponiveis = MesEscala.query.order_by(MesEscala.ano.desc(), MesEscala.mes.desc()).all()
+    todos_horarios = ['6-13', '6-14', '7-15', '13-21', '14-22', '15-22']
     
     # Agrupar escalas por data
     from collections import defaultdict
@@ -269,7 +260,8 @@ def ver_escala_mensal(mes_id):
                          mes_escala=mes_escala,
                          todos_funcionarios=todos_funcionarios,
                          meses_disponiveis=meses_disponiveis,
-                         semanas_dados=semanas_dados)
+                         semanas_dados=semanas_dados,
+                         todos_horarios=todos_horarios)
 
 @app.route('/trocar-escala')
 @login_required
@@ -462,4 +454,36 @@ def importar_escala():
     
     return render_template('importar_escala.html', 
                          funcionarios=funcionarios,
-                         dias_semana=dias_semana)    
+                         dias_semana=dias_semana)
+
+@app.route('/trocar-horario/<int:func_id>/<string:horario_antigo>/<string:horario_novo>/<int:mes_id>')
+@login_required
+def trocar_horario(func_id, horario_antigo, horario_novo, mes_id):
+    if mes_id > 0:
+        # Escala mensal
+        escalas = Escala.query.filter_by(
+            funcionario_id=func_id,
+            horario=horario_antigo,
+            mes_escala_id=mes_id,
+            ativa=True
+        ).all()
+    else:
+        # Escala semanal
+        escalas = Escala.query.filter_by(
+            funcionario_id=func_id,
+            horario=horario_antigo,
+            ativa=True
+        ).all()
+    
+    for escala in escalas:
+        escala.horario = horario_novo
+    
+    db.session.commit()
+    
+    func = Funcionario.query.get(func_id)
+    flash(f'Horario de {func.nome} alterado para {horario_novo.replace("-", " as ")}!', 'success')
+    
+    if mes_id > 0:
+        return redirect(url_for('ver_escala_mensal', mes_id=mes_id))
+    else:
+        return redirect(url_for('ver_escala'))    

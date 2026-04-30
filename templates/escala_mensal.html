@@ -119,7 +119,23 @@
                         {% for func in funcs %}
                         <tr>
                             {% if loop.first %}
-                            <td rowspan="{{ funcs|length }}" class="horario-cell"><strong>{{ horario.replace('-', ' as ') }}</strong></td>
+                            <td rowspan="{{ funcs|length }}" class="horario-cell">
+    <div class="dropdown">
+        <button class="btn btn-link dropdown-toggle horario-dropdown" type="button" data-bs-toggle="dropdown">
+            <strong>{{ horario.replace('-', ' as ') }}</strong>
+        </button>
+        <ul class="dropdown-menu">
+            <li><h6 class="dropdown-header">Trocar horario:</h6></li>
+            {% for h in todos_horarios %}
+            <li>
+                <a class="dropdown-item" href="{{ url_for('trocar_horario', func_id=func.id, horario_antigo=horario, horario_novo=h, mes_id=mes_escala.id) }}">
+                    {{ h.replace('-', ' as ') }}
+                </a>
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+</td>
                             {% endif %}
                             
                             <td class="funcionario-cell">

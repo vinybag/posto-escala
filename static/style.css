@@ -484,3 +484,20 @@ body {
 .table-responsive::-webkit-scrollbar-thumb:hover {
     background: #555;
 }
+
+.horario-dropdown {
+    text-decoration: none !important;
+    color: #212529 !important;
+    padding: 0;
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.horario-dropdown:hover {
+    color: #007bff !important;
+}
+
+.horario-dropdown::after {
+    font-size: 0.6rem;
+    margin-left: 4px;
+}
