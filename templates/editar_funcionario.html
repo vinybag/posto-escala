@@ -34,6 +34,13 @@
                             <option value="nao" {% if not funcionario.pode_folgar_domingo %}selected{% endif %}>Nao</option>
                         </select>
                     </div>
+                    <div class="mb-3">
+                        <label for="ativo" class="form-label">Status</label>
+                        <select class="form-control" id="ativo" name="ativo">
+                            <option value="sim" {% if funcionario.ativo %}selected{% endif %}>Ativo</option>
+                            <option value="nao" {% if not funcionario.ativo %}selected{% endif %}>Inativo</option>
+                        </select>
+                    </div>
                     <button type="submit" class="btn btn-secondary">Salvar Alteracoes</button>
                     <a href="{{ url_for('listar_funcionarios') }}" class="btn btn-secondary">Cancelar</a>
                 </form>

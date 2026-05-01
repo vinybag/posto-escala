@@ -107,6 +107,7 @@ def editar_funcionario(id):
         funcionario.nome = request.form.get('nome')
         funcionario.preferencia_turno = request.form.get('preferencia')
         funcionario.pode_folgar_domingo = request.form.get('pode_folgar_domingo') == 'sim'
+        funcionario.ativo = request.form.get('ativo') == 'sim'
         
         db.session.commit()
         flash(f'Funcionario {funcionario.nome} atualizado com sucesso!', 'success')
