@@ -9,7 +9,7 @@
     </div>
 </div>
 
-<!-- Escala Semanal Atual -->
+<!-- Escala Semanal -->
 <div class="card mb-4">
     <div class="card-header d-flex justify-content-between align-items-center">
         <h5 class="mb-0">Escala Semanal</h5>
@@ -24,9 +24,28 @@
     </div>
     <div class="card-body">
         {% if escala_semanal_count > 0 %}
-        <p>Registros ativos: <strong>{{ escala_semanal_count }}</strong></p>
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Tipo</th>
+                        <th>Registros</th>
+                        <th>Periodo</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Escala Semanal</strong></td>
+                        <td>{{ escala_semanal_count }} registros</td>
+                        <td>Semana atual</td>
+                        <td><span class="badge bg-success">Ativa</span></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
         {% else %}
-        <p class="text-muted">Nenhuma escala semanal gerada</p>
+        <p class="text-muted mb-0">Nenhuma escala semanal gerada</p>
         {% endif %}
     </div>
 </div>
