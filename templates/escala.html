@@ -43,84 +43,81 @@
                 <td colspan="10"><strong>Turno da Manha</strong></td>
             </tr>
             
-            {% set funcs_mostrados_manha = [] %}
             {% for horario in ['6-13', '6-14', '7-15'] %}
                 {% for item in escala %}
-                    {% if item.horario == horario and item.funcionario not in funcs_mostrados_manha %}
-                        {% set _ = funcs_mostrados_manha.append(item.funcionario) %}
-                        {% set func = item.funcionario %}
-                        <tr>
-                            <td class="horario-cell">
-                                <div class="dropdown">
-                                    <button class="btn btn-link dropdown-toggle horario-dropdown" type="button" data-bs-toggle="dropdown">
-                                        <strong>{{ horario.replace('-', ' as ') }}</strong>
-                                    </button>
-                                    <ul class="dropdown-menu">
-                                        <li><h6 class="dropdown-header">Mudar horario:</h6></li>
-                                        {% for h in todos_horarios %}
-                                            {% if h != horario %}
-                                            <li>
-                                                <a class="dropdown-item" href="{{ url_for('trocar_horario', func_id=func.id, horario_antigo=horario, horario_novo=h, mes_id=0) }}">
-                                                    {{ h.replace('-', ' as ') }}
-                                                </a>
-                                            </li>
-                                            {% endif %}
-                                        {% endfor %}
-                                    </ul>
-                                </div>
-                            </td>
-                            
-                            <td class="text-center caixa-cell">
-                                <div class="dropdown">
-                                    <button class="btn btn-sm dropdown-toggle {% if item.caixa %}btn-warning{% else %}btn-outline-secondary{% endif %}" type="button" data-bs-toggle="dropdown">
-                                        {% if item.caixa %}CAIXA{% else %}-{% endif %}
-                                    </button>
-                                    <ul class="dropdown-menu">
-                                        <li><h6 class="dropdown-header">Caixa:</h6></li>
+                    {% if item.horario == horario %}
+                    <tr>
+                        <td class="horario-cell">
+                            <div class="dropdown">
+                                <button class="btn btn-link dropdown-toggle horario-dropdown" type="button" data-bs-toggle="dropdown">
+                                    <strong>{{ horario.replace('-', ' as ') }}</strong>
+                                </button>
+                                <ul class="dropdown-menu">
+                                    <li><h6 class="dropdown-header">Mudar horario:</h6></li>
+                                    {% for h in todos_horarios %}
+                                        {% if h != horario %}
                                         <li>
-                                            <a class="dropdown-item" href="{{ url_for('trocar_caixa', escala_id=item.id, mes_id=0) }}">
-                                                {% if item.caixa %}Remover Caixa{% else %}Definir como Caixa{% endif %}
+                                            <a class="dropdown-item" href="{{ url_for('trocar_horario', func_id=item.funcionario_id, horario_antigo=horario, horario_novo=h, mes_id=0) }}">
+                                                {{ h.replace('-', ' as ') }}
                                             </a>
                                         </li>
-                                    </ul>
-                                </div>
-                            </td>
-                            
-                            <td class="funcionario-cell">
+                                        {% endif %}
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                        </td>
+                        
+                        <td class="text-center caixa-cell">
+                            <div class="dropdown">
+                                <button class="btn btn-sm dropdown-toggle {% if item.caixa %}btn-warning{% else %}btn-outline-secondary{% endif %}" type="button" data-bs-toggle="dropdown">
+                                    {% if item.caixa %}CAIXA{% else %}-{% endif %}
+                                </button>
+                                <ul class="dropdown-menu">
+                                    <li><h6 class="dropdown-header">Caixa:</h6></li>
+                                    <li>
+                                        <a class="dropdown-item" href="{{ url_for('trocar_caixa', escala_id=item.id, mes_id=0) }}">
+                                            {% if item.caixa %}Remover Caixa{% else %}Definir como Caixa{% endif %}
+                                        </a>
+                                    </li>
+                                </ul>
+                            </div>
+                        </td>
+                        
+                        <td class="funcionario-cell">
+                            <div class="dropdown">
+                                <button class="btn btn-link dropdown-toggle funcionario-dropdown" type="button" data-bs-toggle="dropdown">
+                                    <strong>{{ item.funcionario.nome }}</strong>
+                                </button>
+                                <ul class="dropdown-menu">
+                                    <li><h6 class="dropdown-header">Trocar {{ item.funcionario.nome }} por:</h6></li>
+                                    {% for outro_func in todos_funcionarios %}
+                                        {% if outro_func.id != item.funcionario_id %}
+                                        <li>
+                                            <a class="dropdown-item" href="{{ url_for('trocar_escala', func1=item.funcionario_id, func2=outro_func.id, dia=-1, mes_id=0) }}">
+                                                {{ outro_func.nome }}
+                                            </a>
+                                        </li>
+                                        {% endif %}
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                        </td>
+                        
+                        {% for dia in range(7) %}
+                            {% set registro = escala | selectattr('funcionario_id', 'equalto', item.funcionario_id) | selectattr('dia_semana', 'equalto', dia) | list %}
+                            <td class="text-center status-cell">
                                 <div class="dropdown">
-                                    <button class="btn btn-link dropdown-toggle funcionario-dropdown" type="button" data-bs-toggle="dropdown">
-                                        <strong>{{ func.nome }}</strong>
+                                    <button class="btn btn-sm dropdown-toggle status-dropdown {% if registro %}btn-success{% else %}btn-warning{% endif %}" type="button" data-bs-toggle="dropdown">
+                                        {% if registro %}Trabalho{% else %}FOLGA{% endif %}
                                     </button>
                                     <ul class="dropdown-menu">
-                                        <li><h6 class="dropdown-header">Trocar {{ func.nome }} por:</h6></li>
-                                        {% for outro_func in todos_funcionarios %}
-                                            {% if outro_func.id != func.id %}
-                                            <li>
-                                                <a class="dropdown-item" href="{{ url_for('trocar_escala', func1=func.id, func2=outro_func.id, dia=-1, mes_id=0) }}">
-                                                    {{ outro_func.nome }}
-                                                </a>
-                                            </li>
-                                            {% endif %}
-                                        {% endfor %}
+                                        <li><a class="dropdown-item" href="{{ url_for('trocar_status', func_id=item.funcionario_id, dia=dia, horario=horario, novo_status='trabalho', mes_id=0) }}">Trabalho</a></li>
+                                        <li><a class="dropdown-item" href="{{ url_for('trocar_status', func_id=item.funcionario_id, dia=dia, horario=horario, novo_status='folga', mes_id=0) }}">FOLGA</a></li>
                                     </ul>
                                 </div>
                             </td>
-                            
-                            {% for dia in range(7) %}
-                                {% set registro = escala | selectattr('funcionario_id', 'equalto', func.id) | selectattr('dia_semana', 'equalto', dia) | list %}
-                                <td class="text-center status-cell">
-                                    <div class="dropdown">
-                                        <button class="btn btn-sm dropdown-toggle status-dropdown {% if registro %}btn-success{% else %}btn-warning{% endif %}" type="button" data-bs-toggle="dropdown">
-                                            {% if registro %}Trabalho{% else %}FOLGA{% endif %}
-                                        </button>
-                                        <ul class="dropdown-menu">
-                                            <li><a class="dropdown-item" href="{{ url_for('trocar_status', func_id=func.id, dia=dia, horario=horario, novo_status='trabalho', mes_id=0) }}">Trabalho</a></li>
-                                            <li><a class="dropdown-item" href="{{ url_for('trocar_status', func_id=func.id, dia=dia, horario=horario, novo_status='folga', mes_id=0) }}">FOLGA</a></li>
-                                        </ul>
-                                    </div>
-                                </td>
-                            {% endfor %}
-                        </tr>
+                        {% endfor %}
+                    </tr>
                     {% endif %}
                 {% endfor %}
             {% endfor %}
@@ -130,84 +127,81 @@
                 <td colspan="10"><strong>Turno da Tarde</strong></td>
             </tr>
             
-            {% set funcs_mostrados_tarde = [] %}
             {% for horario in ['13-21', '14-22', '15-22'] %}
                 {% for item in escala %}
-                    {% if item.horario == horario and item.funcionario not in funcs_mostrados_tarde %}
-                        {% set _ = funcs_mostrados_tarde.append(item.funcionario) %}
-                        {% set func = item.funcionario %}
-                        <tr>
-                            <td class="horario-cell">
-                                <div class="dropdown">
-                                    <button class="btn btn-link dropdown-toggle horario-dropdown" type="button" data-bs-toggle="dropdown">
-                                        <strong>{{ horario.replace('-', ' as ') }}</strong>
-                                    </button>
-                                    <ul class="dropdown-menu">
-                                        <li><h6 class="dropdown-header">Mudar horario:</h6></li>
-                                        {% for h in todos_horarios %}
-                                            {% if h != horario %}
-                                            <li>
-                                                <a class="dropdown-item" href="{{ url_for('trocar_horario', func_id=func.id, horario_antigo=horario, horario_novo=h, mes_id=0) }}">
-                                                    {{ h.replace('-', ' as ') }}
-                                                </a>
-                                            </li>
-                                            {% endif %}
-                                        {% endfor %}
-                                    </ul>
-                                </div>
-                            </td>
-                            
-                            <td class="text-center caixa-cell">
-                                <div class="dropdown">
-                                    <button class="btn btn-sm dropdown-toggle {% if item.caixa %}btn-warning{% else %}btn-outline-secondary{% endif %}" type="button" data-bs-toggle="dropdown">
-                                        {% if item.caixa %}CAIXA{% else %}-{% endif %}
-                                    </button>
-                                    <ul class="dropdown-menu">
-                                        <li><h6 class="dropdown-header">Caixa:</h6></li>
+                    {% if item.horario == horario %}
+                    <tr>
+                        <td class="horario-cell">
+                            <div class="dropdown">
+                                <button class="btn btn-link dropdown-toggle horario-dropdown" type="button" data-bs-toggle="dropdown">
+                                    <strong>{{ horario.replace('-', ' as ') }}</strong>
+                                </button>
+                                <ul class="dropdown-menu">
+                                    <li><h6 class="dropdown-header">Mudar horario:</h6></li>
+                                    {% for h in todos_horarios %}
+                                        {% if h != horario %}
                                         <li>
-                                            <a class="dropdown-item" href="{{ url_for('trocar_caixa', escala_id=item.id, mes_id=0) }}">
-                                                {% if item.caixa %}Remover Caixa{% else %}Definir como Caixa{% endif %}
+                                            <a class="dropdown-item" href="{{ url_for('trocar_horario', func_id=item.funcionario_id, horario_antigo=horario, horario_novo=h, mes_id=0) }}">
+                                                {{ h.replace('-', ' as ') }}
                                             </a>
                                         </li>
-                                    </ul>
-                                </div>
-                            </td>
-                            
-                            <td class="funcionario-cell">
+                                        {% endif %}
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                        </td>
+                        
+                        <td class="text-center caixa-cell">
+                            <div class="dropdown">
+                                <button class="btn btn-sm dropdown-toggle {% if item.caixa %}btn-warning{% else %}btn-outline-secondary{% endif %}" type="button" data-bs-toggle="dropdown">
+                                    {% if item.caixa %}CAIXA{% else %}-{% endif %}
+                                </button>
+                                <ul class="dropdown-menu">
+                                    <li><h6 class="dropdown-header">Caixa:</h6></li>
+                                    <li>
+                                        <a class="dropdown-item" href="{{ url_for('trocar_caixa', escala_id=item.id, mes_id=0) }}">
+                                            {% if item.caixa %}Remover Caixa{% else %}Definir como Caixa{% endif %}
+                                        </a>
+                                    </li>
+                                </ul>
+                            </div>
+                        </td>
+                        
+                        <td class="funcionario-cell">
+                            <div class="dropdown">
+                                <button class="btn btn-link dropdown-toggle funcionario-dropdown" type="button" data-bs-toggle="dropdown">
+                                    <strong>{{ item.funcionario.nome }}</strong>
+                                </button>
+                                <ul class="dropdown-menu">
+                                    <li><h6 class="dropdown-header">Trocar {{ item.funcionario.nome }} por:</h6></li>
+                                    {% for outro_func in todos_funcionarios %}
+                                        {% if outro_func.id != item.funcionario_id %}
+                                        <li>
+                                            <a class="dropdown-item" href="{{ url_for('trocar_escala', func1=item.funcionario_id, func2=outro_func.id, dia=-1, mes_id=0) }}">
+                                                {{ outro_func.nome }}
+                                            </a>
+                                        </li>
+                                        {% endif %}
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                        </td>
+                        
+                        {% for dia in range(7) %}
+                            {% set registro = escala | selectattr('funcionario_id', 'equalto', item.funcionario_id) | selectattr('dia_semana', 'equalto', dia) | list %}
+                            <td class="text-center status-cell">
                                 <div class="dropdown">
-                                    <button class="btn btn-link dropdown-toggle funcionario-dropdown" type="button" data-bs-toggle="dropdown">
-                                        <strong>{{ func.nome }}</strong>
+                                    <button class="btn btn-sm dropdown-toggle status-dropdown {% if registro %}btn-success{% else %}btn-warning{% endif %}" type="button" data-bs-toggle="dropdown">
+                                        {% if registro %}Trabalho{% else %}FOLGA{% endif %}
                                     </button>
                                     <ul class="dropdown-menu">
-                                        <li><h6 class="dropdown-header">Trocar {{ func.nome }} por:</h6></li>
-                                        {% for outro_func in todos_funcionarios %}
-                                            {% if outro_func.id != func.id %}
-                                            <li>
-                                                <a class="dropdown-item" href="{{ url_for('trocar_escala', func1=func.id, func2=outro_func.id, dia=-1, mes_id=0) }}">
-                                                    {{ outro_func.nome }}
-                                                </a>
-                                            </li>
-                                            {% endif %}
-                                        {% endfor %}
+                                        <li><a class="dropdown-item" href="{{ url_for('trocar_status', func_id=item.funcionario_id, dia=dia, horario=horario, novo_status='trabalho', mes_id=0) }}">Trabalho</a></li>
+                                        <li><a class="dropdown-item" href="{{ url_for('trocar_status', func_id=item.funcionario_id, dia=dia, horario=horario, novo_status='folga', mes_id=0) }}">FOLGA</a></li>
                                     </ul>
                                 </div>
                             </td>
-                            
-                            {% for dia in range(7) %}
-                                {% set registro = escala | selectattr('funcionario_id', 'equalto', func.id) | selectattr('dia_semana', 'equalto', dia) | list %}
-                                <td class="text-center status-cell">
-                                    <div class="dropdown">
-                                        <button class="btn btn-sm dropdown-toggle status-dropdown {% if registro %}btn-success{% else %}btn-warning{% endif %}" type="button" data-bs-toggle="dropdown">
-                                            {% if registro %}Trabalho{% else %}FOLGA{% endif %}
-                                        </button>
-                                        <ul class="dropdown-menu">
-                                            <li><a class="dropdown-item" href="{{ url_for('trocar_status', func_id=func.id, dia=dia, horario=horario, novo_status='trabalho', mes_id=0) }}">Trabalho</a></li>
-                                            <li><a class="dropdown-item" href="{{ url_for('trocar_status', func_id=func.id, dia=dia, horario=horario, novo_status='folga', mes_id=0) }}">FOLGA</a></li>
-                                        </ul>
-                                    </div>
-                                </td>
-                            {% endfor %}
-                        </tr>
+                        {% endfor %}
+                    </tr>
                     {% endif %}
                 {% endfor %}
             {% endfor %}
