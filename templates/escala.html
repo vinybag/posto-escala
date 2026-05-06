@@ -13,6 +13,7 @@
         <thead class="table-dark">
             <tr>
                 <th>Horario</th>
+                <th>Caixa</th>
                 <th>Funcionario</th>
                 <th>SEG</th>
                 <th>TER</th>
@@ -23,6 +24,7 @@
                 <th>DOM</th>
             </tr>
             <tr class="datas-header">
+                <th></th>
                 <th></th>
                 <th></th>
                 {% for dia in range(7) %}
@@ -38,7 +40,7 @@
         <tbody>
             <!-- MANHA -->
             <tr class="turno-header">
-                <td colspan="9"><strong>Turno da Manha</strong></td>
+                <td colspan="10"><strong>Turno da Manha</strong></td>
             </tr>
             
             {% for func in todos_funcionarios %}
@@ -67,6 +69,24 @@
                                     </li>
                                     {% endif %}
                                 {% endfor %}
+                            </ul>
+                        </div>
+                    </td>
+                    
+                    <!-- CELULA CAIXA -->
+                    <td class="text-center caixa-cell">
+                        {% set item_escala = escala | selectattr('funcionario_id', 'equalto', func.id) | selectattr('horario', 'equalto', func_horario.valor) | first %}
+                        <div class="dropdown">
+                            <button class="btn btn-sm dropdown-toggle {% if item_escala and item_escala.caixa %}btn-warning{% else %}btn-outline-secondary{% endif %}" type="button" data-bs-toggle="dropdown">
+                                {% if item_escala and item_escala.caixa %}CAIXA{% else %}-{% endif %}
+                            </button>
+                            <ul class="dropdown-menu">
+                                <li><h6 class="dropdown-header">Caixa:</h6></li>
+                                <li>
+                                    <a class="dropdown-item" href="{{ url_for('trocar_caixa', escala_id=item_escala.id, mes_id=0) if item_escala else '#' }}">
+                                        {% if item_escala and item_escala.caixa %}Remover Caixa{% else %}Definir como Caixa{% endif %}
+                                    </a>
+                                </li>
                             </ul>
                         </div>
                     </td>
@@ -111,7 +131,7 @@
 
             <!-- TARDE -->
             <tr class="turno-header">
-                <td colspan="9"><strong>Turno da Tarde</strong></td>
+                <td colspan="10"><strong>Turno da Tarde</strong></td>
             </tr>
             
             {% for func in todos_funcionarios %}
@@ -140,6 +160,24 @@
                                     </li>
                                     {% endif %}
                                 {% endfor %}
+                            </ul>
+                        </div>
+                    </td>
+                    
+                    <!-- CELULA CAIXA -->
+                    <td class="text-center caixa-cell">
+                        {% set item_escala = escala | selectattr('funcionario_id', 'equalto', func.id) | selectattr('horario', 'equalto', func_horario.valor) | first %}
+                        <div class="dropdown">
+                            <button class="btn btn-sm dropdown-toggle {% if item_escala and item_escala.caixa %}btn-warning{% else %}btn-outline-secondary{% endif %}" type="button" data-bs-toggle="dropdown">
+                                {% if item_escala and item_escala.caixa %}CAIXA{% else %}-{% endif %}
+                            </button>
+                            <ul class="dropdown-menu">
+                                <li><h6 class="dropdown-header">Caixa:</h6></li>
+                                <li>
+                                    <a class="dropdown-item" href="{{ url_for('trocar_caixa', escala_id=item_escala.id, mes_id=0) if item_escala else '#' }}">
+                                        {% if item_escala and item_escala.caixa %}Remover Caixa{% else %}Definir como Caixa{% endif %}
+                                    </a>
+                                </li>
                             </ul>
                         </div>
                     </td>

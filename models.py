@@ -39,9 +39,10 @@ class Escala(db.Model):
     __tablename__ = 'escalas'
     
     id = db.Column(db.Integer, primary_key=True)
-    funcionario_id = db.Column(db.Integer, db.ForeignKey('funcionarios.id'), nullable=False)
-    mes_escala_id = db.Column(db.Integer, db.ForeignKey('meses_escala.id'), nullable=True)
-    dia_semana = db.Column(db.Integer)  # 0=segunda, 6=domingo
+    funcionario_id = db.Column(db.Integer, db.ForeignKey(Funcionario.id), nullable=False)
+    mes_escala_id = db.Column(db.Integer, db.ForeignKey(MesEscala.id), nullable=True)
+    dia_semana = db.Column(db.Integer)
     horario = db.Column(db.String(20))
     data = db.Column(db.Date)
     ativa = db.Column(db.Boolean, default=True)
+    caixa = db.Column(db.Boolean, default=False)  # NOVO: True se for caixa

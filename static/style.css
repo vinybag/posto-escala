@@ -526,3 +526,24 @@ body {
 .status-dropdown:hover {
     opacity: 0.85;
 }
+
+.caixa-cell {
+    min-width: 70px;
+}
+
+.caixa-cell .btn {
+    font-size: 0.7rem;
+    padding: 3px 6px;
+}
+
+.caixa-cell .btn-warning {
+    background-color: #ffc107;
+    border-color: #ffc107;
+    color: #212529;
+    font-weight: bold;
+}
+
+.caixa-cell .btn-outline-secondary {
+    font-size: 0.7rem;
+    padding: 3px 6px;
+}

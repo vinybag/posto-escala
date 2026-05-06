@@ -47,6 +47,12 @@ with app.app_context():
                 conn.commit()
             print("Coluna mes_escala_id adicionada com sucesso!")
         
+        if 'caixa' not in colunas:
+            with db.engine.connect() as conn:
+                conn.execute(text('ALTER TABLE escalas ADD COLUMN caixa BOOLEAN DEFAULT 0'))
+                conn.commit()
+            print("Coluna caixa adicionada com sucesso!")
+        
         colunas_func = [c['name'] for c in inspector.get_columns('funcionarios')]
         
         if 'pode_folgar_domingo' not in colunas_func:
@@ -464,3 +470,40 @@ def utility_processor():
 
 if __name__ == '__main__':
     app.run(debug=True)
+
+@app.route('/trocar-caixa/<int:escala_id>/<int:mes_id>')
+@login_required
+def trocar_caixa(escala_id, mes_id):
+    escala = Escala.query.get_or_404(escala_id)
+    
+    # Desmarcar todos os caixas do mesmo dia e turno
+    if escala.horario in ['6-13', '6-14', '7-15']:
+        turno = ['6-13', '6-14', '7-15']
+    else:
+        turno = ['13-21', '14-22', '15-22']
+    
+    if mes_id > 0:
+        Escala.query.filter(
+            Escala.mes_escala_id == mes_id,
+            Escala.dia_semana == escala.dia_semana,
+            Escala.horario.in_(turno),
+            Escala.caixa == True
+        ).update({Escala.caixa: False}, synchronize_session=False)
+    else:
+        Escala.query.filter(
+            Escala.dia_semana == escala.dia_semana,
+            Escala.horario.in_(turno),
+            Escala.ativa == True,
+            Escala.caixa == True
+        ).update({Escala.caixa: False}, synchronize_session=False)
+    
+    # Marcar novo caixa
+    escala.caixa = True
+    db.session.commit()
+    
+    flash('Caixa atualizado!', 'success')
+    
+    if mes_id > 0:
+        return redirect(url_for('ver_escala_mensal', mes_id=mes_id))
+    else:
+        return redirect(url_for('ver_escala'))
