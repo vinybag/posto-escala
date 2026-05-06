@@ -148,9 +148,16 @@ def gerar_escala():
 @app.route('/escala')
 @login_required
 def ver_escala():
+    # Buscar TODAS as escalas ativas (sem filtrar por mes)
     escala = Escala.query.filter_by(ativa=True).order_by(Escala.horario, Escala.funcionario_id, Escala.dia_semana).all()
+    
+    if not escala:
+        flash('Nenhuma escala semanal encontrada!', 'warning')
+        return redirect(url_for('dashboard'))
+    
     todos_funcionarios = Funcionario.query.filter_by(ativo=True).all()
     todos_horarios = ['6-13', '6-14', '7-15', '13-21', '14-22', '15-22']
+    
     return render_template('escala.html', escala=escala, todos_funcionarios=todos_funcionarios, todos_horarios=todos_horarios)
 
 @app.route('/gerar-escala-mensal', methods=['GET', 'POST'])
@@ -177,8 +184,14 @@ def gerar_escala_mensal():
 @login_required
 def ver_escala_mensal(mes_id):
     mes_escala = MesEscala.query.get_or_404(mes_id)
-    escala = Escala.query.filter_by(mes_escala_id=mes_id, ativa=True)\
+    
+    # Buscar TODAS as escalas desse mes (sem filtrar por ativa)
+    escala = Escala.query.filter_by(mes_escala_id=mes_id)\
         .order_by(Escala.data, Escala.horario, Escala.funcionario_id).all()
+    
+    if not escala:
+        flash('Nenhum dado encontrado para este mes!', 'warning')
+        return redirect(url_for('listar_escalas'))
     
     todos_funcionarios = Funcionario.query.filter_by(ativo=True).all()
     meses_disponiveis = MesEscala.query.order_by(MesEscala.ano.desc(), MesEscala.mes.desc()).all()
@@ -187,10 +200,6 @@ def ver_escala_mensal(mes_id):
     from collections import defaultdict
     
     datas_escala = sorted(set(e.data for e in escala))
-    
-    if not datas_escala:
-        flash('Nenhum dado encontrado para este mes!', 'warning')
-        return redirect(url_for('listar_escalas'))
     
     semanas = []
     semana_atual = []
