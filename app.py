@@ -148,7 +148,6 @@ def gerar_escala():
 @app.route('/escala')
 @login_required
 def ver_escala():
-    # Buscar TODAS as escalas ativas (sem filtrar por mes)
     escala = Escala.query.filter_by(ativa=True).order_by(Escala.horario, Escala.funcionario_id, Escala.dia_semana).all()
     
     if not escala:
@@ -158,7 +157,24 @@ def ver_escala():
     todos_funcionarios = Funcionario.query.filter_by(ativo=True).all()
     todos_horarios = ['6-13', '6-14', '7-15', '13-21', '14-22', '15-22']
     
-    return render_template('escala.html', escala=escala, todos_funcionarios=todos_funcionarios, todos_horarios=todos_horarios)
+    # Agrupar escalas por funcionario e horario
+    from collections import defaultdict
+    funcionarios_por_horario = defaultdict(list)
+    for e in escala:
+        if e.funcionario not in funcionarios_por_horario[e.horario]:
+            funcionarios_por_horario[e.horario].append(e.funcionario)
+    
+    # Criar dicionario de escalas por (func_id, dia_semana)
+    escalas_por_dia = {}
+    for e in escala:
+        escalas_por_dia[(e.funcionario_id, e.dia_semana)] = e
+    
+    return render_template('escala.html', 
+                         escala=escala, 
+                         todos_funcionarios=todos_funcionarios, 
+                         todos_horarios=todos_horarios,
+                         funcionarios_por_horario=dict(funcionarios_por_horario),
+                         escalas_por_dia=escalas_por_dia)
 
 @app.route('/gerar-escala-mensal', methods=['GET', 'POST'])
 @login_required
