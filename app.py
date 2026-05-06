@@ -404,6 +404,7 @@ def trocar_horario(func_id, horario_antigo, horario_novo, mes_id):
     for escala in escalas:
         escala.horario = horario_novo
     
+    db.session.expire_all()  # Limpar cache
     db.session.commit()
     
     func = Funcionario.query.get(func_id)
