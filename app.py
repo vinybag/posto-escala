@@ -285,8 +285,8 @@ def trocar_escala():
     mes_id = request.args.get('mes_id', 0, type=int)
     
     if mes_id > 0:
-        escalas_func1 = Escala.query.filter_by(funcionario_id=func1_id, mes_escala_id=mes_id, ativa=True).all()
-        escalas_func2 = Escala.query.filter_by(funcionario_id=func2_id, mes_escala_id=mes_id, ativa=True).all()
+        escalas_func1 = Escala.query.filter_by(funcionario_id=func1_id, mes_escala_id=mes_id).all()
+        escalas_func2 = Escala.query.filter_by(funcionario_id=func2_id, mes_escala_id=mes_id).all()
     else:
         escalas_func1 = Escala.query.filter_by(funcionario_id=func1_id, ativa=True).all()
         escalas_func2 = Escala.query.filter_by(funcionario_id=func2_id, ativa=True).all()
@@ -296,6 +296,9 @@ def trocar_escala():
             escala.funcionario_id = func2_id
         for escala in escalas_func2:
             escala.funcionario_id = func1_id
+        
+        db.session.flush()
+        db.session.expire_all()
         db.session.commit()
         
         func1 = Funcionario.query.get(func1_id)
@@ -410,17 +413,22 @@ def importar_escala():
 def trocar_horario(func_id, horario_antigo, horario_novo, mes_id):
     if mes_id > 0:
         escalas = Escala.query.filter_by(
-            funcionario_id=func_id, horario=horario_antigo, mes_escala_id=mes_id, ativa=True
+            funcionario_id=func_id, 
+            horario=horario_antigo, 
+            mes_escala_id=mes_id
         ).all()
     else:
         escalas = Escala.query.filter_by(
-            funcionario_id=func_id, horario=horario_antigo, ativa=True
+            funcionario_id=func_id, 
+            horario=horario_antigo, 
+            ativa=True
         ).all()
     
     for escala in escalas:
         escala.horario = horario_novo
     
-    db.session.expire_all()  # Limpar cache
+    db.session.flush()
+    db.session.expire_all()
     db.session.commit()
     
     func = Funcionario.query.get(func_id)
@@ -453,6 +461,8 @@ def trocar_status(func_id, dia, horario, novo_status, mes_id):
     else:
         flash('Status alterado para FOLGA!', 'success')
     
+    db.session.flush()
+    db.session.expire_all()
     db.session.commit()
     
     if mes_id > 0:
@@ -502,7 +512,6 @@ if __name__ == '__main__':
 def trocar_caixa(escala_id, mes_id):
     escala = Escala.query.get_or_404(escala_id)
     
-    # Desmarcar todos os caixas do mesmo dia e turno
     if escala.horario in ['6-13', '6-14', '7-15']:
         turno = ['6-13', '6-14', '7-15']
     else:
@@ -523,7 +532,6 @@ def trocar_caixa(escala_id, mes_id):
             Escala.caixa == True
         ).update({Escala.caixa: False}, synchronize_session=False)
     
-    # Marcar novo caixa
     escala.caixa = True
     db.session.commit()
     
