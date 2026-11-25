@@ -35,6 +35,13 @@
                         </select>
                     </div>
                     <div class="mb-3">
+                        <label for="mulher" class="form-label">Mulher? (domingos alternados, CLT art. 386)</label>
+                        <select class="form-control" id="mulher" name="mulher">
+                            <option value="nao" {% if not funcionario.mulher %}selected{% endif %}>Nao</option>
+                            <option value="sim" {% if funcionario.mulher %}selected{% endif %}>Sim</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
                         <label for="ativo" class="form-label">Status</label>
                         <select class="form-control" id="ativo" name="ativo">
                             <option value="sim" {% if funcionario.ativo %}selected{% endif %}>Ativo</option>

@@ -76,6 +76,7 @@
                                     'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'][mes.mes-1] }} 
                                 / {{ mes.ano }}
                             </strong>
+                            <span class="badge {{ 'bg-warning text-dark' if (mes.regra or '6x1') == '6x1' else 'bg-secondary' }}">{{ mes.regra or '6x1' }}</span>
                             {% if mes.mes == current_month and mes.ano == current_year %}
                             <span class="badge bg-secondary">Atual</span>
                             {% endif %}

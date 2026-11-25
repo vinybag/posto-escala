@@ -30,6 +30,7 @@
                     <a class="nav-link {% if ep == 'dashboard' %}active{% endif %}" href="{{ url_for('dashboard') }}">Dashboard</a>
                     <a class="nav-link {% if 'funcionario' in ep %}active{% endif %}" href="{{ url_for('listar_funcionarios') }}">Funcionários</a>
                     <a class="nav-link {% if 'escala' in ep %}active{% endif %}" href="{{ url_for('listar_escalas') }}">Escalas</a>
+                    <a class="nav-link {% if ep == 'configuracao' %}active{% endif %}" href="{{ url_for('configuracao') }}">Configuração</a>
                     <a class="nav-link" href="{{ url_for('auth.logout') }}">Sair</a>
                 </div>
             </div>

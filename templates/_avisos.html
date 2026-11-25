@@ -1,0 +1,10 @@
+{% if avisos %}
+<div class="alert alert-warning">
+    <strong>Alertas da escala 5x2 ({{ avisos|length }})</strong>
+    <ul class="mb-0 mt-2">
+        {% for a in avisos %}
+        <li><span class="badge bg-secondary me-1">{{ a.tipo }}</span>{{ a.texto }}</li>
+        {% endfor %}
+    </ul>
+</div>
+{% endif %}

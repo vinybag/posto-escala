@@ -29,6 +29,13 @@
                             <option value="nao">Nao</option>
                         </select>
                     </div>
+                    <div class="mb-3">
+                        <label for="mulher" class="form-label">Mulher? (domingos alternados, CLT art. 386)</label>
+                        <select class="form-control" id="mulher" name="mulher">
+                            <option value="nao" selected>Nao</option>
+                            <option value="sim">Sim</option>
+                        </select>
+                    </div>
                     <button type="submit" class="btn btn-secondary">Cadastrar</button>
                 </form>
             </div>
@@ -48,6 +55,7 @@
                                 <th>Nome</th>
                                 <th>Preferencia</th>
                                 <th>Dom?</th>
+                                <th>Mulher</th>
                                 <th>Status</th>
                                 <th>Acoes</th>
                             </tr>
@@ -67,6 +75,13 @@
                                 </td>
                                 <td>
                                     {% if func.pode_folgar_domingo %}
+                                        <span class="badge bg-secondary">Sim</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">Nao</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if func.mulher %}
                                         <span class="badge bg-secondary">Sim</span>
                                     {% else %}
                                         <span class="badge bg-secondary">Nao</span>

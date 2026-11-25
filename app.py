@@ -1,7 +1,8 @@
 import os
 from flask import Flask, render_template, request, redirect, url_for, flash
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
-from models import db, Usuario, Funcionario, Escala, MesEscala
+from models import db, Usuario, Funcionario, Escala, MesEscala, ConfigEscala
+import escala5x2 as e5
 from auth import auth_bp
 from datetime import datetime, timedelta
 from sqlalchemy import inspect, text
@@ -61,6 +62,20 @@ with app.app_context():
                 conn.commit()
             print("Coluna pode_folgar_domingo adicionada com sucesso!")
         
+        if 'mulher' not in colunas_func:
+            with db.engine.connect() as conn:
+                conn.execute(text('ALTER TABLE funcionarios ADD COLUMN mulher BOOLEAN DEFAULT 0'))
+                conn.commit()
+            print("Coluna mulher adicionada com sucesso!")
+
+        colunas_mes = [c['name'] for c in inspector.get_columns('meses_escala')]
+
+        if 'regra' not in colunas_mes:
+            with db.engine.connect() as conn:
+                conn.execute(text("ALTER TABLE meses_escala ADD COLUMN regra VARCHAR(10) DEFAULT '6x1'"))
+                conn.commit()
+            print("Coluna regra adicionada com sucesso!")
+
         if not Usuario.query.filter_by(username='admin').first():
             admin = Usuario(username='admin', password='admin123', is_admin=True)
             db.session.add(admin)
@@ -92,12 +107,14 @@ def novo_funcionario():
     nome = request.form.get('nome')
     preferencia = request.form.get('preferencia', 'misto')
     pode_folgar_domingo = request.form.get('pode_folgar_domingo') == 'sim'
+    mulher = request.form.get('mulher') == 'sim'
     
     if nome:
         funcionario = Funcionario(
             nome=nome,
             preferencia_turno=preferencia,
-            pode_folgar_domingo=pode_folgar_domingo
+            pode_folgar_domingo=pode_folgar_domingo,
+            mulher=mulher
         )
         db.session.add(funcionario)
         db.session.commit()
@@ -114,6 +131,7 @@ def editar_funcionario(id):
         funcionario.preferencia_turno = request.form.get('preferencia')
         funcionario.pode_folgar_domingo = request.form.get('pode_folgar_domingo') == 'sim'
         funcionario.ativo = request.form.get('ativo') == 'sim'
+        funcionario.mulher = request.form.get('mulher') == 'sim'
         
         db.session.commit()
         flash(f'Funcionario {funcionario.nome} atualizado com sucesso!', 'success')
@@ -135,11 +153,18 @@ def excluir_funcionario(id):
 def gerar_escala():
     from scheduler import gerar_escala_semanal
     
+    if not Funcionario.query.filter_by(ativo=True).first():
+        flash('Erro: Não há funcionários cadastrados!', 'error')
+        return redirect(url_for('ver_escala'))
+
+    # a escala anterior continua no banco (so deixa de ser a "ativa"); e dela que
+    # vem a sequencia de dias seguidos e de domingos.
     Escala.query.filter_by(ativa=True).update({Escala.ativa: False})
-    resultado = gerar_escala_semanal()
+    resultado, avisos = gerar_escala_semanal()
     
     if resultado:
-        flash('Nova escala semanal gerada com sucesso!', 'success')
+        flash('Nova escala semanal 5x2 gerada com sucesso!', 'success')
+        _flash_avisos(avisos)
     else:
         flash('Erro: Não há funcionários cadastrados!', 'error')
     
@@ -155,7 +180,9 @@ def ver_escala():
         return redirect(url_for('dashboard'))
     
     todos_funcionarios = Funcionario.query.filter_by(ativo=True).all()
-    todos_horarios = ['6-13', '6-14', '7-15', '13-21', '14-22', '15-22']
+    from scheduler import horarios_existentes
+    horarios = horarios_existentes()
+    todos_horarios = horarios['manha'] + horarios['tarde']
     
     # Agrupar escalas por funcionario e horario
     from collections import defaultdict
@@ -173,8 +200,11 @@ def ver_escala():
                          escala=escala, 
                          todos_funcionarios=todos_funcionarios, 
                          todos_horarios=todos_horarios,
+                         horarios_manha=horarios['manha'],
+                         horarios_tarde=horarios['tarde'],
                          funcionarios_por_horario=dict(funcionarios_por_horario),
-                         escalas_por_dia=escalas_por_dia)
+                         escalas_por_dia=escalas_por_dia,
+                         avisos=_avisos_semana(escala))
 
 @app.route('/gerar-escala-mensal', methods=['GET', 'POST'])
 @login_required
@@ -184,10 +214,10 @@ def gerar_escala_mensal():
     if request.method == 'POST':
         mes = int(request.form.get('mes'))
         ano = int(request.form.get('ano'))
-        resultado = gerar_mensal(mes=mes, ano=ano)
+        resultado, avisos = gerar_mensal(mes=mes, ano=ano)
         
         if resultado:
-            flash(f'Escala de {mes:02d}/{ano} gerada com sucesso!', 'success')
+            flash(f'Escala 5x2 de {mes:02d}/{ano} gerada com sucesso!', 'success')
             return redirect(url_for('ver_escala_mensal', mes_id=resultado))
         else:
             flash('Erro ao gerar escala!', 'error')
@@ -211,7 +241,9 @@ def ver_escala_mensal(mes_id):
     
     todos_funcionarios = Funcionario.query.filter_by(ativo=True).all()
     meses_disponiveis = MesEscala.query.order_by(MesEscala.ano.desc(), MesEscala.mes.desc()).all()
-    todos_horarios = ['6-13', '6-14', '7-15', '13-21', '14-22', '15-22']
+    from scheduler import horarios_existentes, analisar_mes
+    horarios = horarios_existentes()
+    todos_horarios = horarios['manha'] + horarios['tarde']
     
     from collections import defaultdict
     
@@ -274,7 +306,10 @@ def ver_escala_mensal(mes_id):
                          todos_funcionarios=todos_funcionarios,
                          meses_disponiveis=meses_disponiveis,
                          semanas_dados=semanas_dados,
-                         todos_horarios=todos_horarios)
+                         todos_horarios=todos_horarios,
+                         horarios_manha=horarios['manha'],
+                         horarios_tarde=horarios['tarde'],
+                         avisos=analisar_mes(mes_escala))
 
 @app.route('/trocar-escala')
 @login_required
@@ -366,9 +401,20 @@ def importar_escala():
         while data_inicio.weekday() != 0:
             data_inicio = data_inicio - timedelta(days=1)
         
-        mes_escala = MesEscala(mes=data_inicio.month, ano=data_inicio.year, ativo=True)
-        db.session.add(mes_escala)
-        db.session.flush()
+        regra = request.form.get('regra', '6x1')
+        if regra not in ('6x1', '5x2'):
+            regra = '6x1'
+        
+        # Importar de novo o mesmo mes reaproveita o registro e troca so esta semana
+        mes_escala = MesEscala.query.filter_by(mes=data_inicio.month, ano=data_inicio.year).first()
+        if mes_escala:
+            Escala.query.filter(Escala.mes_escala_id == mes_escala.id,
+                                Escala.data >= data_inicio,
+                                Escala.data <= data_inicio + timedelta(days=6)).delete(synchronize_session=False)
+        else:
+            mes_escala = MesEscala(mes=data_inicio.month, ano=data_inicio.year, ativo=True, regra=regra)
+            db.session.add(mes_escala)
+            db.session.flush()
         
         for i in range(20):
             func_id = request.form.get(f'funcionario_{i}')
@@ -401,7 +447,9 @@ def importar_escala():
     
     funcionarios = Funcionario.query.filter_by(ativo=True).all()
     dias_semana = ['SEG', 'TER', 'QUA', 'QUI', 'SEX', 'SAB', 'DOM']
-    todos_horarios = ['6-13', '6-14', '7-15', '13-21', '14-22', '15-22']
+    from scheduler import horarios_existentes
+    horarios = horarios_existentes(extra=e5.HORARIOS_ANTIGOS)
+    todos_horarios = horarios['manha'] + horarios['tarde']
     
     return render_template('importar_escala.html', 
                          funcionarios=funcionarios,
@@ -504,18 +552,14 @@ def _obter_meses_disponiveis():
 def utility_processor():
     return dict(timedelta=timedelta)
 
-if __name__ == '__main__':
-    app.run(debug=True)
-
 @app.route('/trocar-caixa/<int:escala_id>/<int:mes_id>')
 @login_required
 def trocar_caixa(escala_id, mes_id):
     escala = Escala.query.get_or_404(escala_id)
     
-    if escala.horario in ['6-13', '6-14', '7-15']:
-        turno = ['6-13', '6-14', '7-15']
-    else:
-        turno = ['13-21', '14-22', '15-22']
+    grupo = e5.grupo_do_horario(escala.horario)
+    turno = [h for (h,) in db.session.query(Escala.horario).distinct()
+             if h and e5.grupo_do_horario(h) == grupo]
     
     if mes_id > 0:
         Escala.query.filter(
@@ -541,3 +585,60 @@ def trocar_caixa(escala_id, mes_id):
         return redirect(url_for('ver_escala_mensal', mes_id=mes_id))
     else:
         return redirect(url_for('ver_escala'))
+
+
+# ============================================
+# CONFIGURACAO DA ESCALA 5x2
+# ============================================
+
+@app.route('/configuracao', methods=['GET', 'POST'])
+@login_required
+def configuracao():
+    from scheduler import obter_config, salvar_config, montar_contexto
+    cfg = obter_config()
+    
+    if request.method == 'POST':
+        try:
+            minimos = {
+                g: [max(0, int(request.form.get(f'min_{g}_{d}') or 0)) for d in range(7)]
+                for g in ('manha', 'tarde')
+            }
+            salvar_config(
+                request.form.get('abre', '06:00'), request.form.get('fecha', '22:00'),
+                int(request.form.get('etapa', 42)), int(request.form.get('intervalo', 60)),
+                minimos)
+            flash('Configuração salva!', 'success')
+        except (ValueError, TypeError) as erro:
+            flash(f'Configuração inválida: {erro}', 'error')
+        return redirect(url_for('configuracao'))
+    
+    cfg, turnos, minimos = montar_contexto(cfg)
+    ativos = Funcionario.query.filter_by(ativo=True).all()
+    mulheres = sum(1 for f in ativos if f.mulher)
+    minimos_vazios = not minimos
+    if minimos_vazios:
+        fixos = {g: sum(1 for f in ativos if f.preferencia_turno == g) for g in ('manha', 'tarde')}
+        mistos = sum(1 for f in ativos if f.preferencia_turno not in ('manha', 'tarde'))
+        n_manha = fixos['manha'] + (mistos + 1) // 2
+        n_tarde = fixos['tarde'] + mistos // 2
+        minimos = {'manha': [max(1, n_manha * 5 // 7) if n_manha else 0] * 7,
+                   'tarde': [max(1, n_tarde * 5 // 7) if n_tarde else 0] * 7}
+    for g in ('manha', 'tarde'):
+        minimos.setdefault(g, [0] * 7)
+    return render_template('configuracao.html', cfg=cfg, turnos=turnos, minimos=minimos,
+                           minimos_vazios=minimos_vazios, dias=e5.DIAS,
+                           total_ativos=len(ativos), mulheres=mulheres)
+
+
+def _flash_avisos(avisos):
+    if avisos:
+        flash(f'Atenção: a escala gerada tem {len(avisos)} alerta(s) de regra. Veja os detalhes na tela da escala.', 'warning')
+
+
+def _avisos_semana(escala):
+    from scheduler import analisar_semana
+    return analisar_semana(escala)
+
+
+if __name__ == '__main__':
+    app.run(debug=True)

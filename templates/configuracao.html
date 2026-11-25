@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Configuração da Escala 5x2</h2>
+    <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">Voltar</a>
+</div>
+
+<form method="POST">
+    <div class="card mb-4">
+        <div class="card-header"><h5 class="mb-0">Funcionamento do posto</h5></div>
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-md-3">
+                    <label class="form-label">Abre às</label>
+                    <input type="time" class="form-control" name="abre" value="{{ cfg.abre }}" required>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Fecha às</label>
+                    <input type="time" class="form-control" name="fecha" value="{{ cfg.fecha }}" required>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Etapa da jornada</label>
+                    <select class="form-select" name="etapa">
+                        <option value="42" {% if cfg.etapa == 42 %}selected{% endif %}>42h semanais (8h24 por dia)</option>
+                        <option value="40" {% if cfg.etapa == 40 %}selected{% endif %}>40h semanais (8h por dia)</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Intervalo (minutos)</label>
+                    <input type="number" class="form-control" name="intervalo" min="0" max="180" step="5" value="{{ cfg.intervalo }}" required>
+                </div>
+            </div>
+            <p class="mt-3 mb-0 text-muted">
+                Turnos que serão gerados:
+                <strong>Manhã {{ turnos.manha.rotulo.replace('-', ' as ') }}</strong>
+                {% if turnos.tarde %} · <strong>Tarde {{ turnos.tarde.rotulo.replace('-', ' as ') }}</strong>{% endif %}
+                (inclui {{ turnos.pausa }} min de intervalo).
+            </p>
+        </div>
+    </div>
+
+    <div class="card mb-4">
+        <div class="card-header"><h5 class="mb-0">Mínimo de pessoas por dia</h5></div>
+        <div class="card-body">
+            {% if minimos_vazios %}
+            <div class="alert alert-info">Valores sugeridos (cerca de 5/7 de cada equipe). Ajuste e salve para fixar os mínimos.</div>
+            {% endif %}
+            <div class="table-responsive">
+                <table class="table table-bordered text-center align-middle">
+                    <thead class="table-dark">
+                        <tr><th>Turno</th>{% for d in dias %}<th>{{ d }}</th>{% endfor %}</tr>
+                    </thead>
+                    <tbody>
+                        {% for g, nome in (('manha', 'Manhã'), ('tarde', 'Tarde')) %}
+                        <tr>
+                            <td><strong>{{ nome }}</strong></td>
+                            {% for d in range(7) %}
+                            <td><input type="number" min="0" max="50" class="form-control form-control-sm text-center"
+                                       name="min_{{ g }}_{{ d }}" value="{{ minimos[g][d] }}"></td>
+                            {% endfor %}
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <p class="text-muted mb-0">
+                Funcionários ativos: {{ total_ativos }} ({{ mulheres }} mulher(es)).
+                A lei (2 folgas por semana, no máximo 5 dias seguidos, domingo de folga a cada 3 semanas,
+                domingos alternados para mulheres e 11h de descanso) tem prioridade sobre o mínimo:
+                se não couber, a escala sai com um alerta.
+            </p>
+        </div>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Salvar configuração</button>
+</form>
+{% endblock %}
