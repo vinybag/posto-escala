@@ -4,19 +4,34 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>BKN Tech - Sistema de Escalas</title>
+    <meta name="theme-color" content="#00504f">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <nav class="navbar navbar-expand-lg navbar-dark pt-navbar">
         <div class="container">
-            <a class="navbar-brand" href="/">Escala Auto Posto Cesar</a>
+            <a class="navbar-brand" href="/">
+                <span class="pt-brand-mark">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2c3.5 4.2 6 7.3 6 10.6A6 6 0 0 1 12 19a6 6 0 0 1-6-6.4C6 9.3 8.5 6.2 12 2zm0 20a1 1 0 0 1-1-1h2a1 1 0 0 1-1 1z"/></svg>
+                </span>
+                <span>Escala Auto Posto Cesar<span class="pt-brand-sub">Sistema de Escalas</span></span>
+            </a>
             {% if current_user.is_authenticated %}
-            <div class="navbar-nav ms-auto">
-                <a class="nav-link" href="{{ url_for('dashboard') }}">Dashboard</a>
-                <a class="nav-link" href="{{ url_for('listar_funcionarios') }}">Funcionários</a>
-                <a class="nav-link" href="{{ url_for('listar_escalas') }}">Escalas</a>
-                <a class="nav-link" href="{{ url_for('auth.logout') }}">Sair</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#ptNav" aria-controls="ptNav" aria-expanded="false" aria-label="Menu">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="ptNav">
+                <div class="navbar-nav ms-auto">
+                    {% set ep = request.endpoint or '' %}
+                    <a class="nav-link {% if ep == 'dashboard' %}active{% endif %}" href="{{ url_for('dashboard') }}">Dashboard</a>
+                    <a class="nav-link {% if 'funcionario' in ep %}active{% endif %}" href="{{ url_for('listar_funcionarios') }}">Funcionários</a>
+                    <a class="nav-link {% if 'escala' in ep %}active{% endif %}" href="{{ url_for('listar_escalas') }}">Escalas</a>
+                    <a class="nav-link" href="{{ url_for('auth.logout') }}">Sair</a>
+                </div>
             </div>
             {% endif %}
         </div>

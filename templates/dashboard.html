@@ -1,52 +1,48 @@
 {% extends "base.html" %}
 {% block content %}
-<h2>Dashboard</h2>
+<div class="pt-page-title mb-2">
+    <h2>Dashboard</h2>
+    <small>Visão geral do posto</small>
+</div>
 
-<div class="row mt-4">
-    <div class="col-md-3">
-        <div class="card">
-            <div class="card-header">
-                <h5>Funcionarios Cadastrados</h5>
-            </div>
+<div class="row mt-3">
+    <div class="col-sm-6 col-lg-3">
+        <div class="card pt-stat">
             <div class="card-body">
-                <h3>{{ funcionarios|length }}</h3>
+                <span class="pt-stat-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2"/><circle cx="10" cy="7" r="4"/><path d="M21 21v-2a4 4 0 0 0-3-3.870M16 3.130a4 4 0 0 1 0 7.750"/></svg></span>
+                <h5>Funcionários cadastrados</h5>
+                <div class="pt-number">{{ funcionarios|length }}</div>
                 <a href="{{ url_for('listar_funcionarios') }}" class="btn btn-primary">Gerenciar</a>
             </div>
         </div>
     </div>
-    
-    <div class="col-md-3">
-        <div class="card">
-            <div class="card-header">
+    <div class="col-sm-6 col-lg-3">
+        <div class="card pt-stat">
+            <div class="card-body">
+                <span class="pt-stat-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></span>
                 <h5>Escala Semanal</h5>
-            </div>
-            <div class="card-body">
-                <p>Cria escala da proxima semana (6x1)</p>
-                <a href="{{ url_for('gerar_escala') }}" class="btn btn-success">Gerar Escala Semanal</a>
+                <p>Cria a escala da próxima semana (6x1)</p>
+                <a href="{{ url_for('gerar_escala') }}" class="btn btn-primary">Gerar Escala Semanal</a>
             </div>
         </div>
     </div>
-
-    <div class="col-md-3">
-        <div class="card">
-            <div class="card-header bg-info text-white">
+    <div class="col-sm-6 col-lg-3">
+        <div class="card pt-stat">
+            <div class="card-body">
+                <span class="pt-stat-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01"/></svg></span>
                 <h5>Escala Mensal</h5>
-            </div>
-            <div class="card-body">
-                <p>Gera escala para o mes inteiro</p>
-                <a href="{{ url_for('gerar_escala_mensal') }}" class="btn btn-info">Gerar Escala Mensal</a>
+                <p>Gera a escala para o mês inteiro</p>
+                <a href="{{ url_for('gerar_escala_mensal') }}" class="btn btn-primary">Gerar Escala Mensal</a>
             </div>
         </div>
     </div>
-
-    <div class="col-md-3">
-        <div class="card">
-            <div class="card-header bg-secondary text-white">
-                <h5>Importar Escala</h5>
-            </div>
+    <div class="col-sm-6 col-lg-3">
+        <div class="card pt-stat">
             <div class="card-body">
-                <p>Importar uma escala ja pronta</p>
-                <a href="{{ url_for('importar_escala') }}" class="btn btn-secondary">Importar</a>
+                <span class="pt-stat-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M17 8l-5-5-5 5M12 3v12"/></svg></span>
+                <h5>Importar Escala</h5>
+                <p>Importar uma escala já pronta</p>
+                <a href="{{ url_for('importar_escala') }}" class="btn btn-outline-secondary">Importar</a>
             </div>
         </div>
     </div>
